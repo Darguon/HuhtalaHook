@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "..\Core\Config.h"
 #include "..\Core\Render.h"
 #include "..\Core\GitHubImageLoader.h"
@@ -30,6 +30,12 @@ bool Button1Pressed = true;
 bool Button2Pressed = false;
 bool Button3Pressed = false;
 bool Button4Pressed = false;
+
+// Add these new animation variables
+float tabAnimProgress = 1.0f;         // Start at 1.0f since Visual tab is active by default
+int lastActiveTab = 0;                // Track the previous active tab
+float tabTransitionSpeed = 4.0f;      // Control animation speed (higher = faster)
+bool isAnimating = false;
 
 // Image dimensions
 int LogoW = 0, LogoH = 0;
@@ -143,6 +149,8 @@ namespace GUI
 			MenuConfig::BombWinPos = ImVec2((ImGui::GetIO().DisplaySize.x - 200.0f) / 2.0f, 80.0f);
 		}
 	}
+
+
 
 	// UI Component functions
 	void AlignRight(float ContentWidth)
@@ -335,6 +343,9 @@ namespace GUI
 				Button2Pressed = false;
 				Button3Pressed = false;
 				Button4Pressed = false;
+				isAnimating = true;
+				tabAnimProgress = 0.0f;
+				lastActiveTab = 0;
 			}
 			ImGui::GetWindowDrawList()->AddRect(
 				ImVec2(MenuConfig::WCS.Button1Pos.x + ImGui::GetWindowPos().x, MenuConfig::WCS.Button1Pos.y + ImGui::GetWindowPos().y),
@@ -351,13 +362,16 @@ namespace GUI
 				ImGui::Image((void*)MenuButton1Pressed, ImVec2(buttonW, buttonH),
 					ImVec2(0, 0), ImVec2(1, 1),
 					ImVec4(1.0f, 0.55f, 0.0f, 1.0f));  // Orange tint
-			if (ImGui::IsItemClicked()) 
+			if (ImGui::IsItemClicked())
 			{
 				MenuConfig::WCS.MenuPage = 0;
 				Button1Pressed = true;
 				Button2Pressed = false;
 				Button3Pressed = false;
 				Button4Pressed = false;
+				isAnimating = true;
+				tabAnimProgress = 0.0f;
+				lastActiveTab = 0;
 			}
 			ImGui::GetWindowDrawList()->AddRect(
 				ImVec2(MenuConfig::WCS.Button1Pos.x + ImGui::GetWindowPos().x, MenuConfig::WCS.Button1Pos.y + ImGui::GetWindowPos().y),
@@ -380,6 +394,9 @@ namespace GUI
 				Button2Pressed = true;
 				Button3Pressed = false;
 				Button4Pressed = false;
+				isAnimating = true;
+				tabAnimProgress = 0.0f;
+				lastActiveTab = 0;
 			}
 			ImGui::GetWindowDrawList()->AddRect(
 				ImVec2(MenuConfig::WCS.Button2Pos.x + ImGui::GetWindowPos().x, MenuConfig::WCS.Button2Pos.y + ImGui::GetWindowPos().y),
@@ -402,6 +419,9 @@ namespace GUI
 				Button2Pressed = false;
 				Button3Pressed = true;
 				Button4Pressed = false;
+				isAnimating = true;
+				tabAnimProgress = 0.0f;
+				lastActiveTab = 0;
 			}
 			ImGui::GetWindowDrawList()->AddRect(
 				ImVec2(MenuConfig::WCS.Button3Pos.x + ImGui::GetWindowPos().x, MenuConfig::WCS.Button3Pos.y + ImGui::GetWindowPos().y),
@@ -424,6 +444,9 @@ namespace GUI
 				Button2Pressed = false;
 				Button3Pressed = false;
 				Button4Pressed = true;
+				isAnimating = true;
+				tabAnimProgress = 0.0f;
+				lastActiveTab = 0;
 			}
 			ImGui::GetWindowDrawList()->AddRect(
 				ImVec2(MenuConfig::WCS.Button4Pos.x + ImGui::GetWindowPos().x, MenuConfig::WCS.Button4Pos.y + ImGui::GetWindowPos().y),
@@ -432,12 +455,61 @@ namespace GUI
 
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 5);
 
-			ImGui::SetCursorPos(MenuConfig::WCS.ChildPos);
-			
+			// Get current tab
+			int currentTab = MenuConfig::WCS.MenuPage;
+
+			// Check if tab changed
+			if (currentTab != lastActiveTab && !isAnimating) {
+				// Start new animation
+				isAnimating = true;
+
+				// Reset animation progress
+				tabAnimProgress = 0.0f;
+
+				// Update last active tab
+				lastActiveTab = currentTab;
+			}
+
+			// Update animation progress
+			if (isAnimating) {
+				tabAnimProgress += ImGui::GetIO().DeltaTime * tabTransitionSpeed;
+				if (tabAnimProgress >= 1.0f) {
+					tabAnimProgress = 1.0f;
+					isAnimating = false;
+				}
+			}
+
+			// Calculate animation effects
+			float slideDirection = lastActiveTab < currentTab ? 1.0f : -1.0f; // Right or left
+			float slideOffset = 0.0f;
+			float fadeAlpha = 1.0f;
+
+			if (isAnimating) {
+				// Create a smooth easing function for the animation
+				float easedProgress = tabAnimProgress < 0.5f ?
+					2.0f * tabAnimProgress * tabAnimProgress : // Ease-in for first half
+					1.0f - pow(-2.0f * tabAnimProgress + 2.0f, 2.0f) * 0.5f; // Ease-out for second half
+
+				// Apply slide effect
+				slideOffset = (1.0f - easedProgress) * 50.0f * slideDirection;
+
+				// Apply fade effect
+				fadeAlpha = tabAnimProgress < 0.5f ? tabAnimProgress * 2.0f : 1.0f;
+			}
+
+			// Set cursor position with animation
+			ImGui::SetCursorPos(ImVec2(MenuConfig::WCS.ChildPos.x + slideOffset, MenuConfig::WCS.ChildPos.y));
+
+			// Apply fade effect
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, fadeAlpha);
+
+			// Begin content area
 			ImGui::BeginChild("Page", MenuConfig::WCS.ChildSize);
 			{
+				// Your existing content code...
 				ImGui::Text("   HuhtalaHook");
-				ImGui::Separator();
+				ImGui::Separator();;
+
 				if (MenuConfig::WCS.MenuPage == 0)
 				{
 					ImGui::Columns(2, nullptr, false);
@@ -464,7 +536,7 @@ namespace GUI
 						PutSwitch(Text::ESP::HeadBox.c_str(), 10.f, ImGui::GetFrameHeight() * 1.7, &ESPConfig::ShowHeadBox, true, "###HeadBoxCol", reinterpret_cast<float*>(&ESPConfig::HeadBoxColor));
 						PutSwitch(Text::ESP::Skeleton.c_str(), 10.f, ImGui::GetFrameHeight() * 1.7, &ESPConfig::ShowBoneESP, true, "###BoneCol", reinterpret_cast<float*>(&ESPConfig::BoneColor));
 						PutSwitch(Text::ESP::SnapLine.c_str(), 10.f, ImGui::GetFrameHeight() * 1.7, &ESPConfig::ShowLineToEnemy, true, "###LineCol", reinterpret_cast<float*>(&ESPConfig::LineToEnemyColor));
-						if (ESPConfig::ShowLineToEnemy) 
+						if (ESPConfig::ShowLineToEnemy)
 						{
 							ImGui::TextDisabled(Text::ESP::LinePosList.c_str());
 							ImGui::SameLine();
@@ -487,7 +559,7 @@ namespace GUI
 						PutSwitch(Text::ESP::VisCheck.c_str(), 10.f, ImGui::GetFrameHeight() * 1.7, &ESPConfig::VisibleCheck, true, "###VisibleCol", reinterpret_cast<float*>(&ESPConfig::VisibleColor));
 					}
 					ImGui::NewLine();
-					
+
 					ImGui::NextColumn();
 					ImGui::SetCursorPosY(24.f);
 					ImGui::SeparatorText("ESP Preview");
@@ -504,7 +576,7 @@ namespace GUI
 					if (RadarCFG::ShowRadar)
 					{
 						PutSwitch(Text::Radar::CustomCheck.c_str(), 5.f, ImGui::GetFrameHeight() * 1.7, &RadarCFG::customRadar);
-						
+
 						if (RadarCFG::customRadar)
 						{
 							PutSwitch(Text::Radar::CrossLine.c_str(), 5.f, ImGui::GetFrameHeight() * 1.7, &RadarCFG::ShowRadarCrossLine);
@@ -514,7 +586,7 @@ namespace GUI
 							PutSliderFloat(Text::Radar::AlphaSlider.c_str(), 5.f, &RadarCFG::RadarBgAlpha, &AlphaMin, &AlphaMax, "%.1f");
 						}
 					}
-					
+
 					//ImGui::NewLine();
 					//ImGui::SeparatorText("Crosshairs");
 					//float DotMin = 1.f, DotMax = 50.f;
@@ -544,10 +616,10 @@ namespace GUI
 					//	PutSwitch(Lang::CrosshairsText.TargetCheck, 5.f, ImGui::GetFrameHeight() * 1.7, &MenuConfig::TargetingCrosshairs, true, "###CircleCol", reinterpret_cast<float*>(&CrosshairsCFG::TargetedColor));
 					//	PutSwitch(Lang::CrosshairsText.TeamCheck, 5.f, ImGui::GetFrameHeight() * 1.7, &CrosshairsCFG::TeamCheck);
 					//}
-					
+
 					//ImGui::Columns(1);
 				}
-				
+
 				if (MenuConfig::WCS.MenuPage == 1)
 				{
 					ImGui::Columns(2, nullptr, false);
@@ -588,7 +660,7 @@ namespace GUI
 						ImGui::Image((void*)HitboxImage, ImVec2(hitboxW, hitboxH));
 
 						ImGui::GetWindowDrawList()->AddLine(ImVec2(StartPos.x + 130, StartPos.y + 20), ImVec2(StartPos.x + 205, StartPos.y + 20), ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border)), 1.8f); // Head
-						ImGui::SetCursorScreenPos(ImVec2(StartPos.x + 203, StartPos.y + 10)); 
+						ImGui::SetCursorScreenPos(ImVec2(StartPos.x + 203, StartPos.y + 10));
 						if (ImGui::Checkbox("###Head", &checkbox1))
 						{
 							if (checkbox1) {
@@ -655,8 +727,8 @@ namespace GUI
 						PutSliderInt(Text::RCS::BulletSlider.c_str(), 5.f, &RCS::RCSBullet, &RCSBulletMin, &RCSBulletMax, "%d");
 						PutSliderFloat(Text::RCS::Yaw.c_str(), 5.f, &RCS::RCSScale.x, &recoilMin, &recoilMax, "%.2f");
 						PutSliderFloat(Text::RCS::Pitch.c_str(), 5.f, &RCS::RCSScale.y, &recoilMin, &recoilMax, "%.2f");
-						float scalex = (2.22 - RCS::RCSScale.x) *.5f;
-						float scaley = (2.12 - RCS::RCSScale.y) *.5f;//Simulate reasonable error values
+						float scalex = (2.22 - RCS::RCSScale.x) * .5f;
+						float scaley = (2.12 - RCS::RCSScale.y) * .5f;//Simulate reasonable error values
 						ImVec2 BulletPos = ImGui::GetCursorScreenPos();
 
 						// Example Preview
@@ -677,7 +749,7 @@ namespace GUI
 						BulletPos12.x = BulletPos11.x - 3 * scalex; BulletPos12.y = BulletPos11.y - 9 * scaley;
 						BulletPos13.x = BulletPos12.x + 15 * scalex; BulletPos13.y = BulletPos12.y - 5 * scaley;
 						BulletPos14.x = BulletPos13.x + 10 * scalex; BulletPos14.y = BulletPos13.y - 4 * scaley;
-						
+
 						ImGui::GetWindowDrawList()->AddCircleFilled(BulletPos0, 4.f, ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border)));
 						ImGui::GetWindowDrawList()->AddCircleFilled(BulletPos1, 4.f, ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border)));
 						ImGui::GetWindowDrawList()->AddCircleFilled(BulletPos2, 4.f, ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border)));
@@ -711,7 +783,7 @@ namespace GUI
 							ImGui::TextDisabled(Text::Trigger::HotKeyList.c_str());
 							ImGui::SameLine();
 							AlignRight(70.f);
-							if (ImGui::Button(Text::Trigger::HotKey.c_str(), {70.f, 25.f}))
+							if (ImGui::Button(Text::Trigger::HotKey.c_str(), { 70.f, 25.f }))
 							{
 								std::thread([&]() {
 									KeyMgr::GetPressedKey(TriggerBot::HotKey, Text::Trigger::HotKey);
@@ -794,6 +866,7 @@ namespace GUI
 				}
 				ImGui::NewLine();
 			} ImGui::EndChild();
+			ImGui::PopStyleVar();
 		} ImGui::End();
 
 		LoadDefaultConfig();
