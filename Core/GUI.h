@@ -421,7 +421,7 @@ namespace GUI
             ImGui::SetCursorPos(ImVec2((sidebarWidth - LogoSize.x) / 2.0f, 15.0f));
             ImGui::Image(LogoID, LogoSize);
             if (ImGui::IsItemClicked()) {
-                Gui.OpenWebpage("https://github.com/ByteCorum/DragonBurn");
+                Gui.OpenWebpage("");
             }
 
             // Navigation buttons - vertical layout in sidebar with icons
@@ -565,7 +565,7 @@ namespace GUI
             drawList->AddRect(
                 contentAreaPos,
                 ImVec2(contentAreaPos.x + contentAreaSize.x, contentAreaPos.y + contentAreaSize.y),
-                ImGui::ColorConvertFloat4ToU32(ImVec4(0.90f, 0.45f, 0.00f, 0.30f)),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(0.10f, 0.12f, 0.28f, 0.30f)),
                 8.0f, 0, 1.0f
             );
 
