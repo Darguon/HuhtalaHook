@@ -75,13 +75,14 @@ namespace OSImGui
     {
         ImVec2 p = ImGui::GetCursorScreenPos();
         ImDrawList* DrawList = ImGui::GetWindowDrawList();
-        float Height = ImGui::GetFrameHeight()*1.5;
+        float Height = ImGui::GetFrameHeight() * 1.5f;
         float Width = Height;
-        float Radius = Height / 4 -2;
+        float Radius = Height / 4 - 2;
 
-        ImGui::InvisibleButton(str_id, ImVec2(Width, Height-10));
+        ImGui::InvisibleButton(str_id, ImVec2(Width, Height - 10));
         if (ImGui::IsItemClicked())
             *v = !(*v);
+
         // Animation
         float t = *v ? 1.0f : 0.f;
         ImGuiContext& g = *GImGui;
@@ -91,15 +92,65 @@ namespace OSImGui
             float T_Animation = ImSaturate(g.LastActiveIdTimer / AnimationSpeed);
             t = *v ? (T_Animation) : (1.0f - T_Animation);
         }
-        // Hovered Color
-        ImU32 Color;
-        Color = ImGui::GetColorU32(ImLerp(ImVec4(RGBA_TO_FLOAT(31, 31, 31, 255)), ImVec4(RGBA_TO_FLOAT(230, 115, 0, 255)), t));
-        // Rendering
-        DrawList->AddRectFilled(ImVec2(p.x, p.y + Height * 0.30f), ImVec2(p.x + Width, p.y + Height * 0.70f), IM_COL32(35, 35, 35, 255), Height);//
-        DrawList->AddCircleFilled(ImVec2(p.x + Radius + t * (Width - Radius * 2), p.y + Radius + 10), Radius, Color, 360);
 
-        //ImGui::SameLine();
-        //ImGui::Text(str_id);
+        // Modern colors
+        ImColor bgColor = ImColor(0.15f, 0.15f, 0.16f, 0.80f);
+        ImColor activeColor = ImColor(0.10f, 0.12f, 0.28f, t * 0.80f + 0.20f);
+
+        // Draw shadow
+        DrawList->AddRectFilled(
+            ImVec2(p.x + 1, p.y + Height * 0.30f + 1),
+            ImVec2(p.x + Width + 1, p.y + Height * 0.70f + 1),
+            ImColor(0.0f, 0.0f, 0.0f, 0.20f),
+            Height / 2
+        );
+
+        // Background with rounded corners
+        DrawList->AddRectFilled(
+            ImVec2(p.x, p.y + Height * 0.30f),
+            ImVec2(p.x + Width, p.y + Height * 0.70f),
+            bgColor,
+            Height / 2
+        );
+
+        // Active background
+        if (t > 0.0f) {
+            DrawList->AddRectFilled(
+                ImVec2(p.x, p.y + Height * 0.30f),
+                ImVec2(p.x + Width * t, p.y + Height * 0.70f),
+                activeColor,
+                Height / 2
+            );
+        }
+
+        // Circle knob with shadow
+        float knobPosX = p.x + Radius + t * (Width - Radius * 2);
+
+        // Knob shadow
+        DrawList->AddCircleFilled(
+            ImVec2(knobPosX + 1, p.y + Radius + 10 + 1),
+            Radius - 1,
+            ImColor(0.0f, 0.0f, 0.0f, 0.25f),
+            12
+        );
+
+        // Knob
+        DrawList->AddCircleFilled(
+            ImVec2(knobPosX, p.y + Radius + 10),
+            Radius - 1,
+            ImColor(1.0f, 1.0f, 1.0f, 1.0f),
+            12
+        );
+
+        // Add highlight to knob when active
+        if (*v) {
+            DrawList->AddCircle(
+                ImVec2(knobPosX, p.y + Radius + 10),
+                Radius - 3,
+                ImGui::ColorConvertFloat4ToU32(ImVec4(0.14f, 0.16f, 0.36f, 0.5f)),
+                12, 1.0f
+            );
+        }
     }
 
     void OSImGui::MyProgressBar(float fraction, const ImVec2& Size, const char* overlay, ImVec4 Color)
@@ -249,9 +300,9 @@ namespace OSImGui
         }
         ImU32 Color;
         if (ImGui::IsItemHovered())
-            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.85f, 0.24f, 0.15f, 1.0f), ImVec4(0.55f, 0.85f, 0.13f, 1.000f), t));
+            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.10f, 0.12f, 0.28f, 1.0f), ImVec4(0.14f, 0.16f, 0.36f, 1.000f), t));
         else
-            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.90f, 0.29f, 0.20f, 1.0f), ImVec4(0.60f, 0.90f, 0.18f, 1.000f), t));
+            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.12f, 0.14f, 0.32f, 1.0f), ImVec4(0.16f, 0.18f, 0.40f, 1.000f), t));
         DrawList->AddRectFilled(ImVec2(p.x, p.y), ImVec2(p.x + Width, p.y + Height), Color, Height);
         DrawList->AddCircleFilled(ImVec2(p.x + Radius + t * (Width - Radius * 2) + (t == 0 ? 2 : -2), p.y + Radius + 2), Radius, IM_COL32(255, 255, 255, 255), 360);
         DrawList->AddCircle(ImVec2(p.x + Radius + t * (Width - Radius * 2) + (t == 0 ? 2 : -2), p.y + Radius + 2), Radius, IM_COL32(20, 20, 20, 80), 360, 1);
@@ -281,9 +332,9 @@ namespace OSImGui
         }
         ImU32 Color;
         if (ImGui::IsItemHovered())
-            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.08f, 0.18f, 0.21f, 1.0f), ImVec4(0.10f, 0.48f, 0.68f, 1.000f), t));
+            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.10f, 0.12f, 0.28f, 1.0f), ImVec4(0.14f, 0.16f, 0.36f, 1.000f), t));
         else
-            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.12f, 0.22f, 0.25f, 1.0f), ImVec4(0.14f, 0.52f, 0.72f, 1.000f), t));
+            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.12f, 0.14f, 0.32f, 1.0f), ImVec4(0.16f, 0.18f, 0.40f, 1.000f), t));
         DrawList->AddRectFilled(ImVec2(p.x, p.y), ImVec2(p.x + Width, p.y + Height), Color, 360);
         DrawList->AddCircleFilled(ImVec2(p.x + Radius + 2 + t * (Width - (Radius + 2) * 2), p.y + Radius + 2), Radius + 2, IM_COL32(255, 255, 255, 255), 360);
         DrawList->AddCircleFilled(ImVec2(p.x + Radius + t * (Width - Radius * 2) + (t == 0 ? 2 : -2), p.y + Radius + 2), Radius, IM_COL32(230, 230, 230, 255), 360);
@@ -291,7 +342,6 @@ namespace OSImGui
             DrawList->AddText(ImVec2(p.x + 45, p.y + 2), ImColor{ 255,255,255,255 }, str_id);
         else
             DrawList->AddText(ImVec2(p.x + 45, p.y + 2), ImColor{ 185,185,185,255 }, str_id);
-
     }
 
     void OSImGui::MyCheckBox3(const char* str_id, bool* v)
@@ -317,9 +367,9 @@ namespace OSImGui
         ImU32 Color;
         ImU32 TickColor1, TickColor2;
         if (ImGui::IsItemHovered())
-            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.75f, 0.75f, 0.75f, 1.0f), ImVec4(0.05f, 0.85f, 0.25f, 1.000f), t));
+            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.10f, 0.12f, 0.28f, 1.0f), ImVec4(0.14f, 0.16f, 0.36f, 1.000f), t));
         else
-            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), ImVec4(0.1f, 0.9f, 0.3f, 1.000f), t));
+            Color = ImGui::GetColorU32(ImLerp(ImVec4(0.12f, 0.14f, 0.32f, 1.0f), ImVec4(0.16f, 0.18f, 0.40f, 1.000f), t));
 
         TickColor1 = IM_COL32(255, 255, 255, 255 * t);
         TickColor2 = IM_COL32(180, 180, 180, 255 * (1 - t));
@@ -541,7 +591,7 @@ namespace OSImGui
         frame_sc.Min.y += frame_height_origin / 3;
         frame_sc.Max.y -= frame_height_origin / 3;
         //                                                                           grab color                            hover color                color
-        const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32(g.ActiveId == id ? ImColor(230, 115, 0, 255) : hovered ? ImColor(200, 100, 0, 255) : ImColor(35, 35, 35, 255));
+        const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32(g.ActiveId == id ? ImColor(0.14f, 0.16f, 0.36f, 1.00f) : hovered ? ImColor(0.12f, 0.14f, 0.32f, 1.00f) : ImColor(0.06f, 0.06f, 0.10f, 1.00f));
 
         ImGui::RenderNavHighlight(frame_bb, id);
         window->DrawList->AddRectFilled(frame_sc.Min, frame_sc.Max, frame_col, grab_radius);
@@ -551,26 +601,14 @@ namespace OSImGui
         const bool value_changed = ImGui::SliderBehavior(frame_bb, id, data_type, p_data, p_min, p_max, format, flags, &grab_bb);
         if (value_changed)
             ImGui::MarkItemEdited(id);
-        //ImLerp(ImVec4(RGBA_TO_FLOAT(31, 36, 70, 200)), ImVec4(RGBA_TO_FLOAT(55, 63, 124, 200)), t));
+
         // Render grab
         if (grab_bb.Max.x > grab_bb.Min.x)
         {
             window->DrawList->AddRectFilled(
                 { grab_bb.GetCenter().x - grab_radius, grab_bb.GetCenter().y - grab_radius },
                 { grab_bb.GetCenter().x + grab_radius, grab_bb.GetCenter().y + grab_radius },
-                ImColor(230, 115, 0, 255), 20);
-            //window->DrawList->AddLine(
-            //    { grab_bb.GetCenter().x - grab_radius * 0.5f - 1, grab_bb.GetCenter().y - grab_radius * 0.75f },
-            //    { grab_bb.GetCenter().x - grab_radius * 0.5f - 1, grab_bb.GetCenter().y + grab_radius * 0.75f },
-            //    ImColor(150, 150, 150, 255), 1.3f);
-            //window->DrawList->AddLine(
-            //    { grab_bb.GetCenter().x - 1, grab_bb.GetCenter().y - grab_radius * 0.75f },
-            //    { grab_bb.GetCenter().x - 1, grab_bb.GetCenter().y + grab_radius * 0.75f },
-            //    ImColor(150, 150, 150, 255), 1.3f);
-            //window->DrawList->AddLine(
-            //    { grab_bb.GetCenter().x + grab_radius * 0.5f - 1, grab_bb.GetCenter().y - grab_radius * 0.75f },
-            //    { grab_bb.GetCenter().x + grab_radius * 0.5f - 1, grab_bb.GetCenter().y + grab_radius * 0.75f },
-            //    ImColor(150, 150, 150, 255), 1.3f);
+                ImColor(0.10f, 0.12f, 0.28f, 1.00f), 20);
         }
 
         // Display value using user-provided display format so user can add prefix/suffix/decorations to the value.
