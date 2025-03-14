@@ -117,7 +117,7 @@ void DrawCardHeader(const char* title, ImVec2 pos, ImDrawList* drawList)
     // Draw header text
     drawList->AddText(
         pos,
-        ImGui::ColorConvertFloat4ToU32(ImVec4(0.90f, 0.45f, 0.00f, 1.00f)),
+        ImGui::ColorConvertFloat4ToU32(ImVec4(0.10f, 0.12f, 0.28f, 1.00f)),
         title
     );
 
@@ -125,7 +125,7 @@ void DrawCardHeader(const char* title, ImVec2 pos, ImDrawList* drawList)
     drawList->AddRectFilled(
         ImVec2(pos.x, pos.y + textSize.y + 2),
         ImVec2(pos.x + headerWidth, pos.y + textSize.y + 3),
-        ImGui::ColorConvertFloat4ToU32(ImVec4(0.90f, 0.45f, 0.00f, 0.80f))
+        ImGui::ColorConvertFloat4ToU32(ImVec4(0.10f, 0.12f, 0.28f, 0.80f))
     );
 
     // Draw fade-out extension of underline
@@ -134,7 +134,7 @@ void DrawCardHeader(const char* title, ImVec2 pos, ImDrawList* drawList)
         drawList->AddRectFilled(
             ImVec2(pos.x + headerWidth + i * 2, pos.y + textSize.y + 2),
             ImVec2(pos.x + headerWidth + (i + 1) * 2, pos.y + textSize.y + 3),
-            ImGui::ColorConvertFloat4ToU32(ImVec4(0.90f, 0.45f, 0.00f, alpha))
+            ImGui::ColorConvertFloat4ToU32(ImVec4(0.10f, 0.12f, 0.28f, alpha))
         );
     }
 
@@ -282,51 +282,51 @@ namespace GUI
     {
         ImGuiStyle& style = ImGui::GetStyle();
 
-        // Main colors - dark black theme with orange accent
+        // Main colors - dark black theme with midnight blue accent
         ImVec4* colors = style.Colors;
         colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-        colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
-        colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.09f, 0.98f);
-        colors[ImGuiCol_ChildBg] = ImVec4(0.10f, 0.10f, 0.12f, 0.80f);
-        colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.09f, 0.94f);
+        colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.70f, 1.00f);
+        colors[ImGuiCol_WindowBg] = ImVec4(0.06f, 0.06f, 0.10f, 0.98f);
+        colors[ImGuiCol_ChildBg] = ImVec4(0.08f, 0.08f, 0.12f, 0.80f);
+        colors[ImGuiCol_PopupBg] = ImVec4(0.06f, 0.06f, 0.10f, 0.94f);
 
-        // Headers - vibrant orange
-        colors[ImGuiCol_Header] = ImVec4(0.90f, 0.45f, 0.00f, 0.60f);
-        colors[ImGuiCol_HeaderHovered] = ImVec4(1.00f, 0.55f, 0.10f, 0.70f);
-        colors[ImGuiCol_HeaderActive] = ImVec4(1.00f, 0.65f, 0.20f, 0.80f);
+        // Headers - midnight blue
+        colors[ImGuiCol_Header] = ImVec4(0.10f, 0.12f, 0.28f, 0.60f);
+        colors[ImGuiCol_HeaderHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.70f);
+        colors[ImGuiCol_HeaderActive] = ImVec4(0.14f, 0.16f, 0.36f, 0.80f);
 
-        // Buttons - vibrant orange
-        colors[ImGuiCol_Button] = ImVec4(0.90f, 0.45f, 0.00f, 0.60f);
-        colors[ImGuiCol_ButtonHovered] = ImVec4(1.00f, 0.55f, 0.10f, 0.70f);
-        colors[ImGuiCol_ButtonActive] = ImVec4(1.00f, 0.65f, 0.20f, 0.80f);
+        // Buttons - midnight blue
+        colors[ImGuiCol_Button] = ImVec4(0.10f, 0.12f, 0.28f, 0.60f);
+        colors[ImGuiCol_ButtonHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.70f);
+        colors[ImGuiCol_ButtonActive] = ImVec4(0.14f, 0.16f, 0.36f, 0.80f);
 
         // Frame BG (checkboxes, radio buttons, etc.)
-        colors[ImGuiCol_FrameBg] = ImVec4(0.15f, 0.15f, 0.16f, 0.80f);
-        colors[ImGuiCol_FrameBgHovered] = ImVec4(0.90f, 0.45f, 0.00f, 0.30f);
-        colors[ImGuiCol_FrameBgActive] = ImVec4(0.90f, 0.45f, 0.00f, 0.50f);
+        colors[ImGuiCol_FrameBg] = ImVec4(0.10f, 0.10f, 0.14f, 0.80f);
+        colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.30f);
+        colors[ImGuiCol_FrameBgActive] = ImVec4(0.14f, 0.16f, 0.36f, 0.50f);
 
         // Tabs
-        colors[ImGuiCol_Tab] = ImVec4(0.15f, 0.15f, 0.16f, 0.80f);
-        colors[ImGuiCol_TabHovered] = ImVec4(0.90f, 0.45f, 0.00f, 0.80f);
-        colors[ImGuiCol_TabActive] = ImVec4(0.90f, 0.45f, 0.00f, 1.00f);
-        colors[ImGuiCol_TabUnfocused] = ImVec4(0.12f, 0.12f, 0.14f, 0.97f);
-        colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.35f, 0.20f, 0.00f, 1.00f);
+        colors[ImGuiCol_Tab] = ImVec4(0.10f, 0.10f, 0.14f, 0.80f);
+        colors[ImGuiCol_TabHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.80f);
+        colors[ImGuiCol_TabActive] = ImVec4(0.14f, 0.16f, 0.36f, 1.00f);
+        colors[ImGuiCol_TabUnfocused] = ImVec4(0.08f, 0.08f, 0.12f, 0.97f);
+        colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.10f, 0.12f, 0.28f, 1.00f);
 
         // Title
-        colors[ImGuiCol_TitleBg] = ImVec4(0.08f, 0.08f, 0.09f, 1.00f);
-        colors[ImGuiCol_TitleBgActive] = ImVec4(0.90f, 0.45f, 0.00f, 0.90f);
-        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.08f, 0.08f, 0.09f, 0.75f);
+        colors[ImGuiCol_TitleBg] = ImVec4(0.06f, 0.06f, 0.10f, 1.00f);
+        colors[ImGuiCol_TitleBgActive] = ImVec4(0.10f, 0.12f, 0.28f, 0.90f);
+        colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.06f, 0.06f, 0.10f, 0.75f);
 
         // Borders, separators
-        colors[ImGuiCol_Border] = ImVec4(0.90f, 0.45f, 0.00f, 0.40f);
+        colors[ImGuiCol_Border] = ImVec4(0.10f, 0.12f, 0.28f, 0.40f);
         colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-        colors[ImGuiCol_Separator] = ImVec4(0.90f, 0.45f, 0.00f, 0.40f);
-        colors[ImGuiCol_SeparatorHovered] = ImVec4(1.00f, 0.55f, 0.10f, 0.60f);
-        colors[ImGuiCol_SeparatorActive] = ImVec4(1.00f, 0.65f, 0.20f, 0.80f);
+        colors[ImGuiCol_Separator] = ImVec4(0.10f, 0.12f, 0.28f, 0.40f);
+        colors[ImGuiCol_SeparatorHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.60f);
+        colors[ImGuiCol_SeparatorActive] = ImVec4(0.14f, 0.16f, 0.36f, 0.80f);
 
         // Sliders, progress bars
-        colors[ImGuiCol_SliderGrab] = ImVec4(0.90f, 0.45f, 0.00f, 0.80f);
-        colors[ImGuiCol_SliderGrabActive] = ImVec4(1.00f, 0.55f, 0.10f, 1.00f);
+        colors[ImGuiCol_SliderGrab] = ImVec4(0.10f, 0.12f, 0.28f, 0.80f);
+        colors[ImGuiCol_SliderGrabActive] = ImVec4(0.12f, 0.14f, 0.32f, 1.00f);
 
         // Modern Style - increased roundness and spacing
         style.WindowRounding = 8.0f;
@@ -357,16 +357,15 @@ namespace GUI
     void DrawGui()
     {
         // Apply modern style
-        Gui.DrawModernGui();
         ApplyModernStyle();
 
         // Load images if needed (calling the global function)
         ::LoadImages();
 
         // Define colors for use in the UI
-        ImVec4 BorderColorVec4 = ImVec4(0.90f, 0.45f, 0.00f, 0.80f);
-        ImVec4 HoverColorVec4 = ImVec4(1.00f, 0.55f, 0.10f, 0.80f);
-        ImVec4 ActiveColorVec4 = ImVec4(1.00f, 0.65f, 0.20f, 1.00f);
+        ImVec4 BorderColorVec4 = ImVec4(0.10f, 0.12f, 0.28f, 0.80f);
+        ImVec4 HoverColorVec4 = ImVec4(0.12f, 0.14f, 0.32f, 0.80f);
+        ImVec4 ActiveColorVec4 = ImVec4(0.14f, 0.16f, 0.36f, 1.00f);
         ImU32 BorderColorU32 = ImGui::ColorConvertFloat4ToU32(BorderColorVec4);
         ImU32 ShadowColor = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 0.0f, 0.25f));
 
@@ -410,7 +409,7 @@ namespace GUI
             drawList->AddLine(
                 ImVec2(windowPos.x + sidebarWidth - 1, windowPos.y + 5),
                 ImVec2(windowPos.x + sidebarWidth - 1, windowPos.y + windowSize.y - 5),
-                ImGui::ColorConvertFloat4ToU32(ImVec4(0.90f, 0.45f, 0.00f, 0.30f)),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(0.10f, 0.12f, 0.28f, 0.30f)),
                 1.0f
             );
 
@@ -732,7 +731,7 @@ namespace GUI
                                 removeHitbox(BONEINDEX::neck_0);
                             }
                         }
-                        ImGui::GetWindowDrawList()->AddLine(ImVec2(StartPos.x + 120, StartPos.y + 80), ImVec2(StartPos.x + 195, StartPos.y + 80), ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border)), 1.8f); // Chest
+                        ImGui::GetWindowDrawList()->AddLine(ImVec2(StartPos.x + 120, StartPos.y + 80), ImVec2(StartPos.x + 195, StartPos.y + 80), ImColor(ImGui::GetStyleColorVec4(ImGuiCol_Border)), 1.8f);
                         ImGui::SetCursorScreenPos(ImVec2(StartPos.x + 193, StartPos.y + 70));
                         if (ImGui::Checkbox("###Chest", &checkbox3))
                         {
@@ -914,8 +913,8 @@ namespace GUI
                     ImGui::Spacing();
 
                     // Version info with accent color
-                    ImGui::TextColored(BorderColorVec4, "DragonBurn");
-                    ImGui::TextDisabled("by ByteCorum");
+                    ImGui::TextColored(BorderColorVec4, "HuhtalaHook");
+                    ImGui::TextDisabled("by Darg");
 
                     ImGui::Spacing();
 
@@ -923,17 +922,17 @@ namespace GUI
                     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
 
                     if (ImGui::Button("Source Code", { 125.f, 30.f }))
-                        Gui.OpenWebpage("https://github.com/ByteCorum/DragonBurn");
+                        Gui.OpenWebpage("");
                     ImGui::SameLine();
                     if (ImGui::Button("Contact Author", { 125.f, 30.f }))
-                        Gui.OpenWebpage("https://discord.gg/5WcvdzFybD");
+                        Gui.OpenWebpage("");
 
                     ImGui::Spacing();
 
                     // Danger zone buttons with different colors
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.1f, 0.1f, 0.6f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.2f, 0.2f, 0.7f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.9f, 0.3f, 0.3f, 0.8f));
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.35f, 0.05f, 0.05f, 0.6f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.40f, 0.10f, 0.10f, 0.7f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.45f, 0.15f, 0.15f, 0.8f));
 
                     if (ImGui::Button("Unhook", { 125.f, 30.f }))
                         Init::Client::Exit();
@@ -987,9 +986,9 @@ namespace GUI
             t = *v ? (T_Animation) : (1.0f - T_Animation);
         }
 
-        // Modern colors
-        ImColor bgColor = ImColor(0.15f, 0.15f, 0.16f, 0.80f);
-        ImColor activeColor = ImColor(0.90f, 0.45f, 0.00f, t * 0.80f + 0.20f);
+        // Modern colors with midnight theme
+        ImColor bgColor = ImColor(0.10f, 0.10f, 0.14f, 0.80f);
+        ImColor activeColor = ImColor(0.10f, 0.12f, 0.28f, t * 0.80f + 0.20f);
 
         // Draw shadow
         DrawList->AddRectFilled(
@@ -1041,7 +1040,7 @@ namespace GUI
             DrawList->AddCircle(
                 ImVec2(knobPosX, p.y + Radius),
                 Radius - 3,
-                ImGui::ColorConvertFloat4ToU32(ImVec4(1.00f, 0.65f, 0.20f, 0.5f)),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(0.14f, 0.16f, 0.36f, 0.5f)),
                 12, 1.0f
             );
         }
