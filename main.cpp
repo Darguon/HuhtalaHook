@@ -7,15 +7,16 @@
 #include <filesystem>
 #include <KnownFolders.h>
 #include <ShlObj.h>
-#include "SimpleAuth.h"  // Include our self-contained Auth header
-#include "xorstr.hpp"
+#include "KeygenAuth.h"  // Include our new Keygen auth header
 
 using namespace std;
 
 namespace fs = filesystem;
 string fileName;
 
+// Function declarations
 void Cheat();
+bool AuthenticateWithKeygen();
 
 // Standard main function
 int main(int argc, char* argv[])
@@ -30,42 +31,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     return main(0, nullptr);
 }
 
-void Cheat()
+// Authentication function to separate concerns
+bool AuthenticateWithKeygen()
 {
-    ShowWindow(GetConsoleWindow(), SW_SHOWNORMAL);
-    SetConsoleTitle(L"HuhtalaHook");
-    //Init::Verify::RandTitle();
+    // Replace these with your actual Keygen.sh credentials
+    std::string account_id = "3dc8a372-5f95-419b-a0c8-238fb7422b07";  // Your account ID
+    std::string product_id = "19aff6c0-7c4e-409c-b037-f751e3cab041";  // Your product ID
+    std::string api_key = "";  // Leave empty for public validation
 
-    Log::Custom(R"LOGO(                 
- _   _       _     _        _       _   _             _    
-| | | |_   _| |__ | |_ __ _| | __ _| | | | ___   ___ | | __
-| |_| | | | | '_ \| __/ _` | |/ _` | |_| |/ _ \ / _ \| |/ /
-|  _  | |_| | | | | || (_| | | (_| |  _  | (_) | (_) |   < 
-|_| |_|\__,_|_| |_|\__\__,_|_|\__,_|_| |_|\___/ \___/|_|\_\
-Panisin Huhtalaa jos vain voisin ;(
+    // Create KeygenAuth instance
+    KeygenAuth keygenAuth(account_id, product_id, api_key);
 
-
-)LOGO", 13);
-
-    // Initialize Auth
-    std::string name = XorStr("HuhtalaHook").c_str();
-    std::string ownerid = XorStr("eYuF8QPas4").c_str();
-    std::string secret = XorStr("fdcdc9b6ced5890a78d7b055c83f77fddecc1d52d1c070a4f91f20f75be3daa3").c_str();
-    std::string version = XorStr("1.0").c_str();
-    std::string url = XorStr("https://keyauth.win/api/1.3/").c_str();
-
-    // Create SimpleAuth instance
-    SimpleAuth authSystem(name, ownerid, secret, version, url);
-
-    Log::Info("Initializing auth system");
-    bool initSuccess = authSystem.Init();
+    Log::Info("Initializing Keygen.sh authentication");
+    bool initSuccess = keygenAuth.Init();
 
     if (!initSuccess)
     {
         Log::PreviousLine();
-        Log::Error("Auth system initialization failed: " + authSystem.GetMessage());
+        Log::Error("Auth system initialization failed: " + keygenAuth.GetMessage());
         Sleep(3000);
-        exit(0);
+        return false;
     }
 
     Log::PreviousLine();
@@ -74,7 +59,10 @@ Panisin Huhtalaa jos vain voisin ;(
     // Get documents path for config and license storage
     char documentsPath[MAX_PATH];
     if (SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, 0, documentsPath) != S_OK)
+    {
         Log::Error("Failed to get the Documents folder path");
+        return false;
+    }
 
     MenuConfig::path = documentsPath;
     MenuConfig::docPath = documentsPath;
@@ -101,7 +89,7 @@ Panisin Huhtalaa jos vain voisin ;(
 
             // Verify saved license
             Log::Info("Verifying saved license");
-            hasValidLicense = authSystem.VerifyLicense(licenseKey);
+            hasValidLicense = keygenAuth.ValidateLicense(licenseKey);
 
             if (hasValidLicense)
             {
@@ -111,7 +99,7 @@ Panisin Huhtalaa jos vain voisin ;(
             else
             {
                 Log::PreviousLine();
-                Log::Warning("Saved license invalid: " + authSystem.GetMessage(), false);
+                Log::Warning("Saved license invalid: " + keygenAuth.GetMessage(), false);
             }
         }
     }
@@ -130,7 +118,7 @@ Panisin Huhtalaa jos vain voisin ;(
 
             // Verify the license
             Log::Info("Verifying license");
-            hasValidLicense = authSystem.VerifyLicense(licenseKey);
+            hasValidLicense = keygenAuth.ValidateLicense(licenseKey);
 
             if (hasValidLicense)
             {
@@ -148,17 +136,44 @@ Panisin Huhtalaa jos vain voisin ;(
             else
             {
                 Log::PreviousLine();
-                Log::Error("Invalid license: " + authSystem.GetMessage());
+                Log::Error("Invalid license: " + keygenAuth.GetMessage());
                 attempts++;
 
                 if (attempts >= maxAttempts)
                 {
                     Log::Error("Too many failed attempts. Exiting...");
                     Sleep(3000);
-                    exit(0);
+                    return false;
                 }
             }
         }
+    }
+
+    return true;
+}
+
+void Cheat()
+{
+    ShowWindow(GetConsoleWindow(), SW_SHOWNORMAL);
+    SetConsoleTitle(L"HuhtalaHook");
+    //Init::Verify::RandTitle();
+
+    Log::Custom(R"LOGO(                 
+ _   _       _     _        _       _   _             _    
+| | | |_   _| |__ | |_ __ _| | __ _| | | | ___   ___ | | __
+| |_| | | | | '_ \| __/ _` | |/ _` | |_| |/ _ \ / _ \| |/ /
+|  _  | |_| | | | | || (_| | | (_| |  _  | (_) | (_) |   < 
+|_| |_|\__,_|_| |_|\__\__,_|_|\__,_|_| |_|\___/ \___/|_|\_\
+Panisin Huhtalaa jos vain voisin ;(
+
+
+)LOGO", 13);
+
+    // Authenticate with Keygen.sh
+    if (!AuthenticateWithKeygen())
+    {
+        // Authentication failed, exit the application
+        return;
     }
 
     // Continue with the regular initialization
