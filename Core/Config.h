@@ -40,10 +40,12 @@ namespace MenuConfig
 	inline ImVec2 RadarWinPos;
 	inline ImVec2 SpecWinPos;
 	inline ImVec2 BombWinPos;
+	inline ImVec2 KeybindWinPos = ImVec2(10.0f, 300.0f); // Default position, will be updated later
 	inline bool MarkWinChengePos = false;
 	inline bool RadarWinChengePos = false;
 	inline bool SpecWinChengePos = false;
 	inline bool BombWinChengePos = false;
+	inline bool KeybindWinChangePos = false;
 	inline int HotKey = VK_END;
 }
 
@@ -167,6 +169,7 @@ namespace MiscCFG
 	inline bool bmbTimer = true;
 	//inline bool FastStop = false;
 	inline bool SpecList = false;
+	inline bool KeybindStatus = true;
 	inline ImColor BombTimerCol = ImColor(131, 137, 150, 255);
 	inline bool ShowHeadShootLine = false;
 	inline ImColor HeadShootLineColor = ImColor(131, 137, 150, 200);
