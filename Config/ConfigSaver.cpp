@@ -191,13 +191,12 @@ namespace MyConfigSaver
         ConfigData["Misc"]["HeadShootLineColor"]["g"] = MiscCFG::HeadShootLineColor.Value.y;
         ConfigData["Misc"]["HeadShootLineColor"]["b"] = MiscCFG::HeadShootLineColor.Value.z;
         ConfigData["Misc"]["HeadShootLineColor"]["a"] = MiscCFG::HeadShootLineColor.Value.w;
-
         ConfigData["Misc"]["WorkInSpec"]=       MenuConfig::WorkInSpec;
         ConfigData["Misc"]["Watermark"]=        MiscCFG::WaterMark;
         ConfigData["Misc"]["HitSounds"]=        MiscCFG::HitSound;
         ConfigData["Misc"]["HitMarker"]=        MiscCFG::HitMarker;
-
         ConfigData["Misc"]["BombTimer"]=        MiscCFG::bmbTimer;
+        ConfigData["Misc"]["KeybindStatus"] = MiscCFG::KeybindStatus;
         ConfigData["Misc"]["TimerColor"]["r"]=  MiscCFG::BombTimerCol.Value.x;
         ConfigData["Misc"]["TimerColor"]["g"]=  MiscCFG::BombTimerCol.Value.y;
         ConfigData["Misc"]["TimerColor"]["b"]=  MiscCFG::BombTimerCol.Value.z;
@@ -441,6 +440,7 @@ namespace MyConfigSaver
             MenuConfig::BypassOBS = ReadData(ConfigData["Misc"],{"AntiRecord"}, false);
             MenuConfig::HotKey = ReadData(ConfigData["Misc"], { "MenuKey" }, VK_END);
             Text::Misc::HotKey = KeyMgr::GetKeyName(MenuConfig::HotKey);
+            MiscCFG::KeybindStatus = ReadData(ConfigData["Misc"], {"KeybindStatus"}, true);
         }
 
         if (ConfigData.contains("MenuConfig"))
