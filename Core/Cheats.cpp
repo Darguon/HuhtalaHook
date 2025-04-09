@@ -1,4 +1,4 @@
-﻿//
+//
 //______                            ______                  
 //|  _  \                           | ___ \                 
 //| | | |_ __ __ _  __ _  ___  _ __ | |_/ /_   _ _ __ _ __  
@@ -25,6 +25,7 @@
 #include "../Features/RCS.H"
 #include "../Features/BombTimer.h"
 #include "../Features/SpectatorList.h"
+#include "../Features/KeybindStatusDisplay.h"
 #include "../Helpers/Logger.h"
 
 int PreviousTotalHits = 0;
@@ -294,6 +295,7 @@ void MiscFuncs(CEntity& LocalEntity)
 	SpecList::SpectatorWindowList(LocalEntity);
 	bmb::RenderWindow(LocalEntity.Controller.TeamID);
 	Misc::Watermark(LocalEntity);
+	KeybindStatusDisplay::RenderKeybindStatusWindow(LocalEntity);
 	//Misc::FastStop();
 }
 
