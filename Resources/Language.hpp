@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <iostream>
 #include <string>
 #include <windows.h>
@@ -109,6 +109,7 @@ namespace Text {
         inline std::string HitMerker = "Hit Markers";
         inline std::string bmbTimer = "Bomb Timer";
         inline std::string SpecList = "Spec List";
+        inline std::string KeybindStatus = "Keybind Status";
         inline std::string Watermark = "Watermark";
         inline std::string TeamCheck = "Team Check";
         inline std::string AntiRecord = "Anti Record";

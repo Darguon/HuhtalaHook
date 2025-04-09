@@ -247,6 +247,7 @@ namespace ConfigMenu {
 		MiscCFG::HitMarker = false;
 		MiscCFG::SniperCrosshair = true;
 		MiscCFG::SniperCrosshairColor = ImColor(32, 178, 170, 255);
+		MiscCFG::KeybindStatus = true;
 
 		ESPConfig::ESPenabled = true;
 		ESPConfig::DrawFov = false;
@@ -257,13 +258,14 @@ namespace ConfigMenu {
 		MenuConfig::RadarWinPos = ImVec2(25.f, 25.f);
 		MenuConfig::SpecWinPos = ImVec2(10.0f, ImGui::GetIO().DisplaySize.y / 2 - 200);
 		MenuConfig::BombWinPos = ImVec2((ImGui::GetIO().DisplaySize.x - 200.0f) / 2.0f, 80.0f);
+		MenuConfig::KeybindWinPos = ImVec2(10.0f, ImGui::GetIO().DisplaySize.y / 2 + 50);
 
 		MenuConfig::MarkWinChengePos = true;
 		MenuConfig::BombWinChengePos = true;
 		MenuConfig::RadarWinChengePos = true;
 		MenuConfig::SpecWinChengePos = true;
+		MenuConfig::KeybindWinChangePos = true;
 
 		MenuConfig::HotKey = VK_END;
-
 	}
 }
