@@ -29,7 +29,7 @@ std::string GetCurrentVersion();
 std::string GetLatestVersion();
 
 // Configuration
-const std::string VERSION = "1.1.0";  // Current version
+const std::string VERSION = "1.2.0";  // Current version
 const std::string UPDATE_SERVER = "http://51.83.133.131";  // Your Ubuntu VPS IP
 const std::string UPDATE_URL = UPDATE_SERVER + "/updates/";  // Base URL for updates
 const std::string VERSION_CHECK_URL = UPDATE_SERVER + "/version.txt";  // URL to check latest version
