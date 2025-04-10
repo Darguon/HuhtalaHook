@@ -67,12 +67,6 @@ private:
         // Construct the full URL properly
         std::string fullUrl = "https://api.keygen.sh" + endpoint;
 
-        // For debugging
-        std::cout << "Sending " << method << " request to: " << fullUrl << std::endl;
-        if (!data.empty()) {
-            std::cout << "Request data: " << data << std::endl;
-        }
-
         // Initialize WinHTTP
         HINTERNET hSession = WinHttpOpen(L"HuhtalaHook/1.0",
             WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
@@ -80,7 +74,6 @@ private:
             WINHTTP_NO_PROXY_BYPASS, 0);
 
         if (!hSession) {
-            std::cout << "Failed to initialize WinHTTP: " << GetLastError() << std::endl;
             return "{\"meta\":{\"success\":false,\"message\":\"Failed to initialize WinHTTP\"}}";
         }
 
@@ -90,7 +83,6 @@ private:
             INTERNET_DEFAULT_HTTPS_PORT, 0);
 
         if (!hConnect) {
-            std::cout << "Failed to connect to server: " << GetLastError() << std::endl;
             WinHttpCloseHandle(hSession);
             return "{\"meta\":{\"success\":false,\"message\":\"Failed to connect to server\"}}";
         }
@@ -103,7 +95,6 @@ private:
             WINHTTP_FLAG_SECURE);
 
         if (!hRequest) {
-            std::cout << "Failed to create request: " << GetLastError() << std::endl;
             WinHttpCloseHandle(hConnect);
             WinHttpCloseHandle(hSession);
             return "{\"meta\":{\"success\":false,\"message\":\"Failed to create request\"}}";
@@ -119,7 +110,6 @@ private:
         DWORD headersLen = (DWORD)wideHeaders.length();
 
         if (!WinHttpAddRequestHeaders(hRequest, wideHeaders.c_str(), headersLen, WINHTTP_ADDREQ_FLAG_ADD)) {
-            std::cout << "Failed to set headers: " << GetLastError() << std::endl;
             WinHttpCloseHandle(hRequest);
             WinHttpCloseHandle(hConnect);
             WinHttpCloseHandle(hSession);
@@ -139,7 +129,6 @@ private:
         }
 
         if (!result) {
-            std::cout << "Failed to send request: " << GetLastError() << std::endl;
             WinHttpCloseHandle(hRequest);
             WinHttpCloseHandle(hConnect);
             WinHttpCloseHandle(hSession);
@@ -195,7 +184,6 @@ private:
             return "{\"meta\":{\"success\":false,\"message\":\"Empty response from server\"}}";
         }
 
-        std::cout << "License validation response: " << responseStr << std::endl;
         return responseStr;
     }
 
