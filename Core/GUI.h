@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include "..\Core\Config.h"
 #include "..\Core\Render.h"
 #include "..\Core\GitHubImageLoader.h"
@@ -48,6 +49,209 @@ bool checkbox2 = false;
 bool checkbox3 = false;
 bool checkbox4 = false;
 bool checkbox5 = false;
+
+
+// Animation variables for icon buttons
+struct IconAnimationState {
+    float hoverProgress = 0.0f;      // For hover animation
+    float selectProgress = 0.0f;     // For selection animation
+    bool isHovered = false;
+    ImVec2 iconSize = ImVec2(30, 30);
+};
+
+// Create array for four tab buttons
+IconAnimationState iconStates[4];
+
+// Add these helper functions
+namespace IconRenderer {
+    // Visual icon - draws a simplified eye
+    static void RenderVisualIcon(ImDrawList* drawList, ImVec2 center, float size, float animProgress, ImColor color) {
+        const float outerRadius = size * 0.5f;
+        const float innerRadius = size * 0.25f * (1.0f + animProgress * 0.3f);
+        
+        // Draw eye outline (use ellipse approximation with multiple circles)
+        float eyeWidth = outerRadius * (1.0f + animProgress * 0.1f);
+        float eyeHeight = outerRadius * 0.6f;
+        
+        // Draw horizontal line for eye
+        drawList->AddLine(
+            ImVec2(center.x - eyeWidth, center.y),
+            ImVec2(center.x + eyeWidth, center.y),
+            color,
+            2.0f
+        );
+        
+        // Draw vertical curves for eye
+        for (float x = -eyeWidth; x <= eyeWidth; x += eyeWidth/4) {
+            float y = sqrt(1.0f - (x*x)/(eyeWidth*eyeWidth)) * eyeHeight;
+            drawList->AddLine(
+                ImVec2(center.x + x, center.y - y/2),
+                ImVec2(center.x + x, center.y + y/2),
+                color,
+                1.5f
+            );
+        }
+        
+        // Draw pupil
+        drawList->AddCircleFilled(
+            center,
+            innerRadius,
+            color,
+            12
+        );
+    }
+    
+    // Aimbot icon - draws a target/crosshair
+    static void RenderAimbotIcon(ImDrawList* drawList, ImVec2 center, float size, float animProgress, ImColor color) {
+        const float outerRadius = size * 0.45f * (1.0f + animProgress * 0.15f);
+        const float innerRadius = size * 0.2f;
+        const float lineLength = size * 0.15f * (1.0f + animProgress * 0.5f);
+        
+        // Draw outer circle
+        drawList->AddCircle(
+            center,
+            outerRadius,
+            color,
+            16,
+            2.0f
+        );
+        
+        // Draw inner circle
+        drawList->AddCircle(
+            center,
+            innerRadius,
+            color,
+            12,
+            animProgress > 0.5f ? 2.0f : 1.5f
+        );
+        
+        // Draw crosshair lines
+        drawList->AddLine(
+            ImVec2(center.x - outerRadius - lineLength, center.y),
+            ImVec2(center.x - innerRadius, center.y),
+            color,
+            2.0f
+        );
+        drawList->AddLine(
+            ImVec2(center.x + innerRadius, center.y),
+            ImVec2(center.x + outerRadius + lineLength, center.y),
+            color,
+            2.0f
+        );
+        drawList->AddLine(
+            ImVec2(center.x, center.y - outerRadius - lineLength),
+            ImVec2(center.x, center.y - innerRadius),
+            color,
+            2.0f
+        );
+        drawList->AddLine(
+            ImVec2(center.x, center.y + innerRadius),
+            ImVec2(center.x, center.y + outerRadius + lineLength),
+            color,
+            2.0f
+        );
+    }
+    
+    // Miscellaneous icon - draws gear/settings
+    static void RenderMiscIcon(ImDrawList* drawList, ImVec2 center, float size, float animProgress, ImColor color) {
+        const float outerRadius = size * 0.45f;
+        const float innerRadius = size * 0.25f;
+        const int teethCount = 8;
+        const float rotation = animProgress * 0.5f;  // Rotate when active
+        
+        // Draw gear teeth
+        for (int i = 0; i < teethCount; i++) {
+            float angle = i * (2 * IM_PI / teethCount) + rotation;
+            float nextAngle = angle + (0.5f * IM_PI / teethCount);
+            
+            float x1 = center.x + cosf(angle) * outerRadius;
+            float y1 = center.y + sinf(angle) * outerRadius;
+            
+            float x2 = center.x + cosf(angle) * (outerRadius * 1.3f);
+            float y2 = center.y + sinf(angle) * (outerRadius * 1.3f);
+            
+            float x3 = center.x + cosf(nextAngle) * (outerRadius * 1.3f);
+            float y3 = center.y + sinf(nextAngle) * (outerRadius * 1.3f);
+            
+            float x4 = center.x + cosf(nextAngle) * outerRadius;
+            float y4 = center.y + sinf(nextAngle) * outerRadius;
+            
+            ImVec2 points[4] = {
+                ImVec2(x1, y1),
+                ImVec2(x2, y2),
+                ImVec2(x3, y3),
+                ImVec2(x4, y4)
+            };
+            
+            drawList->AddConvexPolyFilled(points, 4, color);
+        }
+        
+        // Draw inner circle
+        drawList->AddCircleFilled(
+            center,
+            innerRadius * (1.0f + animProgress * 0.2f),
+            ImGui::ColorConvertFloat4ToU32(ImVec4(0.12f, 0.12f, 0.14f, 1.0f)),
+            16
+        );
+        
+        // Draw center dot
+        drawList->AddCircleFilled(
+            center,
+            innerRadius * 0.4f,
+            color,
+            8
+        );
+    }
+    
+    // Config icon - draws document/settings
+    static void RenderConfigIcon(ImDrawList* drawList, ImVec2 center, float size, float animProgress, ImColor color) {
+        float width = size * 0.7f;
+        float height = size * 0.8f;
+        
+        ImVec2 topLeft = ImVec2(center.x - width/2, center.y - height/2);
+        ImVec2 bottomRight = ImVec2(center.x + width/2, center.y + height/2);
+        
+        // Calculate fold size (with animation)
+        float foldSize = width * 0.3f * (1.0f + animProgress * 0.15f);
+        
+        // Draw main rectangle (document)
+        drawList->AddRectFilled(
+            topLeft,
+            bottomRight,
+            color,
+            3.0f
+        );
+        
+        // Draw folded corner (with animation)
+        ImVec2 foldPoints[3] = {
+            ImVec2(bottomRight.x - foldSize, topLeft.y),
+            ImVec2(bottomRight.x, topLeft.y),
+            ImVec2(bottomRight.x, topLeft.y + foldSize)
+        };
+        
+        drawList->AddTriangleFilled(
+            foldPoints[0], 
+            foldPoints[1], 
+            foldPoints[2],
+            ImGui::ColorConvertFloat4ToU32(ImVec4(0.12f, 0.12f, 0.14f, 1.0f))
+        );
+        
+        // Draw lines (text content) - animate width
+        float lineWidth = width * 0.7f * (1.0f + animProgress * 0.15f);
+        float lineHeight = height * 0.1f;
+        float lineStartX = center.x - lineWidth/2;
+        
+        for (int i = 0; i < 3; i++) {
+            float lineY = topLeft.y + height * 0.3f + (i * height * 0.2f);
+            drawList->AddRectFilled(
+                ImVec2(lineStartX, lineY),
+                ImVec2(lineStartX + lineWidth, lineY + lineHeight),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(0.12f, 0.12f, 0.14f, 1.0f)),
+                2.0f
+            );
+        }
+    }
+}
 
 // Forward declarations - needs to be at the top
 void DrawCardHeader(const char* title, ImVec2 pos, ImDrawList* drawList);
@@ -282,7 +486,7 @@ namespace GUI
     {
         ImGuiStyle& style = ImGui::GetStyle();
 
-        // Main colors - dark black theme with midnight blue accent
+        // Main colors - dark black theme with orange accent
         ImVec4* colors = style.Colors;
         colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
         colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.70f, 1.00f);
@@ -290,43 +494,44 @@ namespace GUI
         colors[ImGuiCol_ChildBg] = ImVec4(0.08f, 0.08f, 0.12f, 0.80f);
         colors[ImGuiCol_PopupBg] = ImVec4(0.06f, 0.06f, 0.10f, 0.94f);
 
-        // Headers - midnight blue
-        colors[ImGuiCol_Header] = ImVec4(0.10f, 0.12f, 0.28f, 0.60f);
-        colors[ImGuiCol_HeaderHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.70f);
-        colors[ImGuiCol_HeaderActive] = ImVec4(0.14f, 0.16f, 0.36f, 0.80f);
+        // Headers - orange accent
+        colors[ImGuiCol_Header] = ImVec4(1.00f, 0.40f, 0.00f, 0.60f);       // #FF6600 with alpha
+        colors[ImGuiCol_HeaderHovered] = ImVec4(1.00f, 0.50f, 0.10f, 0.70f); // Lighter orange
+        colors[ImGuiCol_HeaderActive] = ImVec4(1.00f, 0.60f, 0.20f, 0.80f);  // Even lighter orange
 
-        // Buttons - midnight blue
-        colors[ImGuiCol_Button] = ImVec4(0.10f, 0.12f, 0.28f, 0.60f);
-        colors[ImGuiCol_ButtonHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.70f);
-        colors[ImGuiCol_ButtonActive] = ImVec4(0.14f, 0.16f, 0.36f, 0.80f);
+        // Buttons - orange accent
+        colors[ImGuiCol_Button] = ImVec4(1.00f, 0.40f, 0.00f, 0.60f);        // #FF6600 with alpha
+        colors[ImGuiCol_ButtonHovered] = ImVec4(1.00f, 0.50f, 0.10f, 0.70f); // Lighter orange
+        colors[ImGuiCol_ButtonActive] = ImVec4(1.00f, 0.60f, 0.20f, 0.80f);  // Even lighter orange
 
         // Frame BG (checkboxes, radio buttons, etc.)
         colors[ImGuiCol_FrameBg] = ImVec4(0.10f, 0.10f, 0.14f, 0.80f);
-        colors[ImGuiCol_FrameBgHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.30f);
-        colors[ImGuiCol_FrameBgActive] = ImVec4(0.14f, 0.16f, 0.36f, 0.50f);
+        colors[ImGuiCol_FrameBgHovered] = ImVec4(1.00f, 0.40f, 0.00f, 0.30f); // Orange with alpha
+        colors[ImGuiCol_FrameBgActive] = ImVec4(1.00f, 0.40f, 0.00f, 0.50f);  // Orange with alpha
 
         // Tabs
         colors[ImGuiCol_Tab] = ImVec4(0.10f, 0.10f, 0.14f, 0.80f);
-        colors[ImGuiCol_TabHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.80f);
-        colors[ImGuiCol_TabActive] = ImVec4(0.14f, 0.16f, 0.36f, 1.00f);
+        colors[ImGuiCol_TabHovered] = ImVec4(1.00f, 0.40f, 0.00f, 0.80f);     // Orange
+        colors[ImGuiCol_TabActive] = ImVec4(1.00f, 0.40f, 0.00f, 1.00f);      // Orange
         colors[ImGuiCol_TabUnfocused] = ImVec4(0.08f, 0.08f, 0.12f, 0.97f);
-        colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.10f, 0.12f, 0.28f, 1.00f);
+        colors[ImGuiCol_TabUnfocusedActive] = ImVec4(1.00f, 0.40f, 0.00f, 0.80f); // Orange
 
         // Title
         colors[ImGuiCol_TitleBg] = ImVec4(0.06f, 0.06f, 0.10f, 1.00f);
-        colors[ImGuiCol_TitleBgActive] = ImVec4(0.10f, 0.12f, 0.28f, 0.90f);
+        colors[ImGuiCol_TitleBgActive] = ImVec4(1.00f, 0.40f, 0.00f, 0.90f);  // Orange
         colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.06f, 0.06f, 0.10f, 0.75f);
 
         // Borders, separators
-        colors[ImGuiCol_Border] = ImVec4(0.10f, 0.12f, 0.28f, 0.40f);
+        colors[ImGuiCol_Border] = ImVec4(1.00f, 0.40f, 0.00f, 0.40f);         // Orange with alpha
         colors[ImGuiCol_BorderShadow] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-        colors[ImGuiCol_Separator] = ImVec4(0.10f, 0.12f, 0.28f, 0.40f);
-        colors[ImGuiCol_SeparatorHovered] = ImVec4(0.12f, 0.14f, 0.32f, 0.60f);
-        colors[ImGuiCol_SeparatorActive] = ImVec4(0.14f, 0.16f, 0.36f, 0.80f);
+        colors[ImGuiCol_Separator] = ImVec4(1.00f, 0.40f, 0.00f, 0.40f);      // Orange with alpha
+        colors[ImGuiCol_SeparatorHovered] = ImVec4(1.00f, 0.50f, 0.10f, 0.60f); // Lighter orange
+        colors[ImGuiCol_SeparatorActive] = ImVec4(1.00f, 0.60f, 0.20f, 0.80f);  // Even lighter orange
 
         // Sliders, progress bars
-        colors[ImGuiCol_SliderGrab] = ImVec4(0.10f, 0.12f, 0.28f, 0.80f);
-        colors[ImGuiCol_SliderGrabActive] = ImVec4(0.12f, 0.14f, 0.32f, 1.00f);
+        colors[ImGuiCol_SliderGrab] = ImVec4(1.00f, 0.40f, 0.00f, 0.80f);       // Orange
+        colors[ImGuiCol_SliderGrabActive] = ImVec4(1.00f, 0.60f, 0.20f, 1.00f); // Lighter orange
+        colors[ImGuiCol_PlotHistogram] = ImVec4(1.00f, 0.40f, 0.00f, 0.80f);    // For progress bars
 
         // Modern Style - increased roundness and spacing
         style.WindowRounding = 8.0f;
@@ -363,9 +568,9 @@ namespace GUI
         ::LoadImages();
 
         // Define colors for use in the UI
-        ImVec4 BorderColorVec4 = ImVec4(0.10f, 0.12f, 0.28f, 0.80f);
-        ImVec4 HoverColorVec4 = ImVec4(0.12f, 0.14f, 0.32f, 0.80f);
-        ImVec4 ActiveColorVec4 = ImVec4(0.14f, 0.16f, 0.36f, 1.00f);
+        ImVec4 BorderColorVec4 = ImVec4(1.00f, 0.40f, 0.00f, 0.80f);
+        ImVec4 HoverColorVec4 = ImVec4(1.00f, 0.50f, 0.10f, 0.80f);
+        ImVec4 ActiveColorVec4 = ImVec4(1.00f, 0.60f, 0.20f, 1.00f);
         ImU32 BorderColorU32 = ImGui::ColorConvertFloat4ToU32(BorderColorVec4);
         ImU32 ShadowColor = ImGui::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.0f, 0.0f, 0.25f));
 
@@ -409,23 +614,142 @@ namespace GUI
             drawList->AddLine(
                 ImVec2(windowPos.x + sidebarWidth - 1, windowPos.y + 5),
                 ImVec2(windowPos.x + sidebarWidth - 1, windowPos.y + windowSize.y - 5),
-                ImGui::ColorConvertFloat4ToU32(ImVec4(0.10f, 0.12f, 0.28f, 0.30f)),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(1.00f, 0.40f, 0.00f, 0.30f)),
                 1.0f
             );
 
-            // Title bar with logo - centered in sidebar
-            ImTextureID LogoID = (void*)Logo;
-            ImVec2 LogoSize = ImVec2(LogoW * 0.8f, LogoH * 0.8f); // Slightly smaller
-
-            // Show logo
-            ImGui::SetCursorPos(ImVec2((sidebarWidth - LogoSize.x) / 2.0f, 15.0f));
-            ImGui::Image(LogoID, LogoSize);
-            if (ImGui::IsItemClicked()) {
+            // Animated HH Logo
+            float logoTime = ImGui::GetTime(); // Get current time for animations
+            float logoSize = 50.0f; // Overall size of the logo area
+            float letterSpacing = 5.0f; // Space between the two Hs
+            
+            // Center position of logo in sidebar
+            ImVec2 logoCenter = ImVec2(
+                windowPos.x + sidebarWidth * 0.5f,
+                windowPos.y + 35.0f
+            );
+            
+            // Create a clickable invisible button for the logo area
+            ImGui::SetCursorPos(ImVec2((sidebarWidth - logoSize) / 2.0f, 15.0f));
+            if (ImGui::InvisibleButton("##Logo", ImVec2(logoSize, logoSize))) {
                 Gui.OpenWebpage("");
             }
+            
+            // Colors for logo
+            ImColor baseColor = ImColor(0.70f, 0.70f, 0.75f, 1.00f);
+            ImColor accentColor = ImColor(1.00f, 0.40f, 0.00f, 1.00f); // #FF6600 (active orange)
+            
+            // Animation parameters
+            float pulse = (sin(logoTime * 2.0f) * 0.5f + 0.5f); // Pulsing animation from 0 to 1
+            float wave = sin(logoTime * 1.5f) * 3.0f; // Wave animation for lines
+            
+            // Draw the two Hs
+            float strokeWidth = 2.5f + pulse * 0.5f; // Animated line thickness
+            float letterHeight = logoSize * 0.7f;
+            float letterWidth = letterHeight * 0.6f;
+            
+            // First H
+            ImVec2 h1Pos = ImVec2(logoCenter.x - letterWidth/2 - letterSpacing, logoCenter.y - letterHeight/2 + wave);
+            
+            // Draw first H
+            // Left vertical line
+            drawList->AddLine(
+                ImVec2(h1Pos.x, h1Pos.y),
+                ImVec2(h1Pos.x, h1Pos.y + letterHeight),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(
+                    baseColor.Value.x + (accentColor.Value.x - baseColor.Value.x) * pulse,
+                    baseColor.Value.y + (accentColor.Value.y - baseColor.Value.y) * pulse,
+                    baseColor.Value.z + (accentColor.Value.z - baseColor.Value.z) * pulse,
+                    1.0f
+                )),
+                strokeWidth
+            );
+            
+            // Horizontal middle line
+            drawList->AddLine(
+                ImVec2(h1Pos.x, h1Pos.y + letterHeight/2 + wave * 0.3f),
+                ImVec2(h1Pos.x + letterWidth, h1Pos.y + letterHeight/2 + wave * 0.3f),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(
+                    accentColor.Value.x,
+                    accentColor.Value.y,
+                    accentColor.Value.z,
+                    (0.7f + pulse * 0.3f)
+                )),
+                strokeWidth
+            );
+            
+            // Right vertical line
+            drawList->AddLine(
+                ImVec2(h1Pos.x + letterWidth, h1Pos.y),
+                ImVec2(h1Pos.x + letterWidth, h1Pos.y + letterHeight),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(
+                    baseColor.Value.x + (accentColor.Value.x - baseColor.Value.x) * pulse,
+                    baseColor.Value.y + (accentColor.Value.y - baseColor.Value.y) * pulse,
+                    baseColor.Value.z + (accentColor.Value.z - baseColor.Value.z) * pulse,
+                    1.0f
+                )),
+                strokeWidth
+            );
+            
+            // Second H
+            ImVec2 h2Pos = ImVec2(logoCenter.x - letterWidth/2 + letterSpacing, logoCenter.y - letterHeight/2 - wave);
+            
+            // Draw second H
+            // Left vertical line
+            drawList->AddLine(
+                ImVec2(h2Pos.x, h2Pos.y),
+                ImVec2(h2Pos.x, h2Pos.y + letterHeight),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(
+                    baseColor.Value.x + (accentColor.Value.x - baseColor.Value.x) * (1.0f - pulse),
+                    baseColor.Value.y + (accentColor.Value.y - baseColor.Value.y) * (1.0f - pulse),
+                    baseColor.Value.z + (accentColor.Value.z - baseColor.Value.z) * (1.0f - pulse),
+                    1.0f
+                )),
+                strokeWidth
+            );
+            
+            // Horizontal middle line
+            drawList->AddLine(
+                ImVec2(h2Pos.x, h2Pos.y + letterHeight/2 - wave * 0.3f),
+                ImVec2(h2Pos.x + letterWidth, h2Pos.y + letterHeight/2 - wave * 0.3f),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(
+                    accentColor.Value.x,
+                    accentColor.Value.y,
+                    accentColor.Value.z,
+                    (0.7f + (1.0f - pulse) * 0.3f)
+                )),
+                strokeWidth
+            );
+            
+            // Right vertical line
+            drawList->AddLine(
+                ImVec2(h2Pos.x + letterWidth, h2Pos.y),
+                ImVec2(h2Pos.x + letterWidth, h2Pos.y + letterHeight),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(
+                    baseColor.Value.x + (accentColor.Value.x - baseColor.Value.x) * (1.0f - pulse),
+                    baseColor.Value.y + (accentColor.Value.y - baseColor.Value.y) * (1.0f - pulse),
+                    baseColor.Value.z + (accentColor.Value.z - baseColor.Value.z) * (1.0f - pulse),
+                    1.0f
+                )),
+                strokeWidth
+            );
+            
+            // Optional: Add a subtle glow effect
+            drawList->AddCircle(
+                logoCenter,
+                logoSize * 0.5f * (0.8f + pulse * 0.2f),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(
+                    accentColor.Value.x,
+                    accentColor.Value.y,
+                    accentColor.Value.z,
+                    0.1f * pulse
+                )),
+                20, 
+                strokeWidth * 0.5f
+            );
 
             // Navigation buttons - vertical layout in sidebar with icons
-            float buttonY = 15.0f + LogoSize.y + 25.0f;
+            float buttonY = 15.0f + logoSize + 25.0f;
             float buttonSpacing = 15.0f;
             float buttonSize = 50.0f;  // Square buttons for modern look
 
@@ -438,7 +762,9 @@ namespace GUI
             else
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.16f, 0.80f));
 
-            if (ImGui::Button("V", ImVec2(buttonSize, buttonSize))) {
+            // Create a transparent button
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+            if (ImGui::Button("##Visual", ImVec2(buttonSize, buttonSize))) {
                 MenuConfig::WCS.MenuPage = 0;
                 Button1Pressed = true;
                 Button2Pressed = false;
@@ -448,6 +774,85 @@ namespace GUI
                 tabAnimProgress = 0.0f;
                 lastActiveTab = MenuConfig::WCS.MenuPage;
             }
+            bool visualBtnHovered = ImGui::IsItemHovered();
+            ImGui::PopStyleColor();
+
+            // Update hover animation
+            float hoverSpeed = 5.0f * ImGui::GetIO().DeltaTime;
+            float selectSpeed = 4.0f * ImGui::GetIO().DeltaTime;
+
+            // Icon state for Visual button
+            iconStates[0].isHovered = visualBtnHovered;
+            if (iconStates[0].isHovered) {
+                iconStates[0].hoverProgress += hoverSpeed;
+                if (iconStates[0].hoverProgress > 1.0f) iconStates[0].hoverProgress = 1.0f;
+            } else {
+                iconStates[0].hoverProgress -= hoverSpeed;
+                if (iconStates[0].hoverProgress < 0.0f) iconStates[0].hoverProgress = 0.0f;
+            }
+
+            // Selection animation
+            if (Button1Pressed) {
+                iconStates[0].selectProgress += selectSpeed;
+                if (iconStates[0].selectProgress > 1.0f) iconStates[0].selectProgress = 1.0f;
+            } else {
+                iconStates[0].selectProgress -= selectSpeed;
+                if (iconStates[0].selectProgress < 0.0f) iconStates[0].selectProgress = 0.0f;
+            }
+
+            // Calculate the total animation progress
+            float visualAnimProgress = (iconStates[0].hoverProgress > iconStates[0].selectProgress) ?
+                                        iconStates[0].hoverProgress : iconStates[0].selectProgress;
+
+            // Draw the actual icon
+            ImVec2 visualIconPos = ImVec2(
+                ImGui::GetItemRectMin().x + buttonSize/2,
+                ImGui::GetItemRectMin().y + buttonSize/2
+            );
+            // Render Visual Icon (eye)
+            {
+                const float size = buttonSize * 0.6f;
+                const float outerRadius = size * 0.5f;
+                const float innerRadius = size * 0.25f * (1.0f + visualAnimProgress * 0.3f);
+                
+                // Draw eye outline
+                float eyeWidth = outerRadius * (1.0f + visualAnimProgress * 0.1f);
+                float eyeHeight = outerRadius * 0.6f;
+                
+                // Draw horizontal line for eye
+                drawList->AddLine(
+                    ImVec2(visualIconPos.x - eyeWidth, visualIconPos.y),
+                    ImVec2(visualIconPos.x + eyeWidth, visualIconPos.y),
+                    Button1Pressed ? 
+                        ImColor(1.00f, 0.40f, 0.00f, 1.00f) : // #FF6600 (active)
+                        ImColor(0.70f, 0.70f, 0.75f, 1.00f),
+                    2.0f
+                );
+                
+                // Draw vertical curves for eye
+                for (float x = -eyeWidth; x <= eyeWidth; x += eyeWidth/4) {
+                    float y = sqrt(1.0f - (x*x)/(eyeWidth*eyeWidth)) * eyeHeight;
+                    drawList->AddLine(
+                        ImVec2(visualIconPos.x + x, visualIconPos.y - y/2),
+                        ImVec2(visualIconPos.x + x, visualIconPos.y + y/2),
+                        Button1Pressed ? 
+                            ImColor(1.00f, 0.40f, 0.00f, 1.00f) : // #FF6600 (active)
+                            ImColor(0.70f, 0.70f, 0.75f, 1.00f),
+                        1.5f
+                    );
+                }
+                
+                // Draw pupil
+                drawList->AddCircleFilled(
+                    visualIconPos,
+                    innerRadius,
+                    Button1Pressed ? 
+                        ImColor(1.00f, 0.40f, 0.00f, 1.00f) : // #FF6600 (active)
+                        ImColor(0.70f, 0.70f, 0.75f, 1.00f),
+                    12
+                );
+            }
+
             ImGui::PopStyleColor();
 
             buttonY += buttonSize + buttonSpacing;
@@ -459,7 +864,9 @@ namespace GUI
             else
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.16f, 0.80f));
 
-            if (ImGui::Button("A", ImVec2(buttonSize, buttonSize))) {
+            // Create a transparent button
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+            if (ImGui::Button("##Aimbot", ImVec2(buttonSize, buttonSize))) {
                 MenuConfig::WCS.MenuPage = 1;
                 Button1Pressed = false;
                 Button2Pressed = true;
@@ -469,6 +876,92 @@ namespace GUI
                 tabAnimProgress = 0.0f;
                 lastActiveTab = MenuConfig::WCS.MenuPage;
             }
+            bool aimbotBtnHovered = ImGui::IsItemHovered();
+            ImGui::PopStyleColor();
+
+            // Icon state for Aimbot button
+            iconStates[1].isHovered = aimbotBtnHovered;
+            if (iconStates[1].isHovered) {
+                iconStates[1].hoverProgress += hoverSpeed;
+                if (iconStates[1].hoverProgress > 1.0f) iconStates[1].hoverProgress = 1.0f;
+            } else {
+                iconStates[1].hoverProgress -= hoverSpeed;
+                if (iconStates[1].hoverProgress < 0.0f) iconStates[1].hoverProgress = 0.0f;
+            }
+
+            // Selection animation
+            if (Button2Pressed) {
+                iconStates[1].selectProgress += selectSpeed;
+                if (iconStates[1].selectProgress > 1.0f) iconStates[1].selectProgress = 1.0f;
+            } else {
+                iconStates[1].selectProgress -= selectSpeed;
+                if (iconStates[1].selectProgress < 0.0f) iconStates[1].selectProgress = 0.0f;
+            }
+
+            // Calculate the total animation progress
+            float aimbotAnimProgress = (iconStates[1].hoverProgress > iconStates[1].selectProgress) ?
+                iconStates[1].hoverProgress : iconStates[1].selectProgress;
+
+            // Draw the actual icon
+            ImVec2 aimbotIconPos = ImVec2(
+                ImGui::GetItemRectMin().x + buttonSize/2,
+                ImGui::GetItemRectMin().y + buttonSize/2
+            );
+            // Render Aimbot Icon (crosshair)
+            {
+                const float size = buttonSize * 0.6f;
+                const float outerRadius = size * 0.45f * (1.0f + aimbotAnimProgress * 0.15f);
+                const float innerRadius = size * 0.2f;
+                const float lineLength = size * 0.15f * (1.0f + aimbotAnimProgress * 0.5f);
+                const ImColor iconColor = Button2Pressed ? 
+                    ImColor(1.00f, 0.40f, 0.00f, 1.00f) : // #FF6600 (active)
+                    ImColor(0.70f, 0.70f, 0.75f, 1.00f);
+                
+                // Draw outer circle
+                drawList->AddCircle(
+                    aimbotIconPos,
+                    outerRadius,
+                    iconColor,
+                    16,
+                    2.0f
+                );
+                
+                // Draw inner circle
+                drawList->AddCircle(
+                    aimbotIconPos,
+                    innerRadius,
+                    iconColor,
+                    12,
+                    aimbotAnimProgress > 0.5f ? 2.0f : 1.5f
+                );
+                
+                // Draw crosshair lines
+                drawList->AddLine(
+                    ImVec2(aimbotIconPos.x - outerRadius - lineLength, aimbotIconPos.y),
+                    ImVec2(aimbotIconPos.x - innerRadius, aimbotIconPos.y),
+                    iconColor,
+                    2.0f
+                );
+                drawList->AddLine(
+                    ImVec2(aimbotIconPos.x + innerRadius, aimbotIconPos.y),
+                    ImVec2(aimbotIconPos.x + outerRadius + lineLength, aimbotIconPos.y),
+                    iconColor,
+                    2.0f
+                );
+                drawList->AddLine(
+                    ImVec2(aimbotIconPos.x, aimbotIconPos.y - outerRadius - lineLength),
+                    ImVec2(aimbotIconPos.x, aimbotIconPos.y - innerRadius),
+                    iconColor,
+                    2.0f
+                );
+                drawList->AddLine(
+                    ImVec2(aimbotIconPos.x, aimbotIconPos.y + innerRadius),
+                    ImVec2(aimbotIconPos.x, aimbotIconPos.y + outerRadius + lineLength),
+                    iconColor,
+                    2.0f
+                );
+            }
+
             ImGui::PopStyleColor();
 
             buttonY += buttonSize + buttonSpacing;
@@ -480,7 +973,9 @@ namespace GUI
             else
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.16f, 0.80f));
 
-            if (ImGui::Button("M", ImVec2(buttonSize, buttonSize))) {
+            // Create a transparent button
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+            if (ImGui::Button("##Misc", ImVec2(buttonSize, buttonSize))) {
                 MenuConfig::WCS.MenuPage = 2;
                 Button1Pressed = false;
                 Button2Pressed = false;
@@ -490,6 +985,92 @@ namespace GUI
                 tabAnimProgress = 0.0f;
                 lastActiveTab = MenuConfig::WCS.MenuPage;
             }
+            ImGui::PopStyleColor();
+            bool miscBtnHovered = ImGui::IsItemHovered();
+
+            // Icon state for Misc button
+            iconStates[2].isHovered = miscBtnHovered;
+            if (iconStates[2].isHovered) {
+                iconStates[2].hoverProgress += hoverSpeed;
+                if (iconStates[2].hoverProgress > 1.0f) iconStates[2].hoverProgress = 1.0f;
+            } else {
+                iconStates[2].hoverProgress -= hoverSpeed;
+                if (iconStates[2].hoverProgress < 0.0f) iconStates[2].hoverProgress = 0.0f;
+            }
+
+            // Selection animation
+            if (Button3Pressed) {
+                iconStates[2].selectProgress += selectSpeed;
+                if (iconStates[2].selectProgress > 1.0f) iconStates[2].selectProgress = 1.0f;
+            } else {
+                iconStates[2].selectProgress -= selectSpeed;
+                if (iconStates[2].selectProgress < 0.0f) iconStates[2].selectProgress = 0.0f;
+            }
+
+            // Calculate the total animation progress
+            float miscAnimProgress = (iconStates[2].hoverProgress > iconStates[2].selectProgress) ?
+                iconStates[2].hoverProgress : iconStates[2].selectProgress;
+
+            // Draw the actual icon
+            ImVec2 miscIconPos = ImVec2(
+                ImGui::GetItemRectMin().x + buttonSize/2,
+                ImGui::GetItemRectMin().y + buttonSize/2
+            );
+            // Render Misc Icon (gear)
+            {
+                const float size = buttonSize * 0.6f;
+                const float outerRadius = size * 0.45f;
+                const float innerRadius = size * 0.25f;
+                const int teethCount = 8;
+                const float rotation = miscAnimProgress * 0.5f;  // Rotate when active
+                const ImColor iconColor = Button3Pressed ? 
+                    ImColor(1.00f, 0.40f, 0.00f, 1.00f) : // #FF6600 (active)
+                    ImColor(0.70f, 0.70f, 0.75f, 1.00f);
+                
+                // Draw gear teeth
+                for (int i = 0; i < teethCount; i++) {
+                    float angle = i * (2 * IM_PI / teethCount) + rotation;
+                    float nextAngle = angle + (0.5f * IM_PI / teethCount);
+                    
+                    float x1 = miscIconPos.x + cosf(angle) * outerRadius;
+                    float y1 = miscIconPos.y + sinf(angle) * outerRadius;
+                    
+                    float x2 = miscIconPos.x + cosf(angle) * (outerRadius * 1.3f);
+                    float y2 = miscIconPos.y + sinf(angle) * (outerRadius * 1.3f);
+                    
+                    float x3 = miscIconPos.x + cosf(nextAngle) * (outerRadius * 1.3f);
+                    float y3 = miscIconPos.y + sinf(nextAngle) * (outerRadius * 1.3f);
+                    
+                    float x4 = miscIconPos.x + cosf(nextAngle) * outerRadius;
+                    float y4 = miscIconPos.y + sinf(nextAngle) * outerRadius;
+                    
+                    ImVec2 points[4] = {
+                        ImVec2(x1, y1),
+                        ImVec2(x2, y2),
+                        ImVec2(x3, y3),
+                        ImVec2(x4, y4)
+                    };
+                    
+                    drawList->AddConvexPolyFilled(points, 4, iconColor);
+                }
+                
+                // Draw inner circle
+                drawList->AddCircleFilled(
+                    miscIconPos,
+                    innerRadius * (1.0f + miscAnimProgress * 0.2f),
+                    ImGui::ColorConvertFloat4ToU32(ImVec4(0.12f, 0.12f, 0.14f, 1.0f)),
+                    16
+                );
+                
+                // Draw center dot
+                drawList->AddCircleFilled(
+                    miscIconPos,
+                    innerRadius * 0.4f,
+                    iconColor,
+                    8
+                );
+            }
+
             ImGui::PopStyleColor();
 
             buttonY += buttonSize + buttonSpacing;
@@ -501,7 +1082,9 @@ namespace GUI
             else
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.15f, 0.15f, 0.16f, 0.80f));
 
-            if (ImGui::Button("C", ImVec2(buttonSize, buttonSize))) {
+            // Create a transparent button
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0,0,0,0));
+            if (ImGui::Button("##Config", ImVec2(buttonSize, buttonSize))) {
                 MenuConfig::WCS.MenuPage = 3;
                 Button1Pressed = false;
                 Button2Pressed = false;
@@ -511,6 +1094,90 @@ namespace GUI
                 tabAnimProgress = 0.0f;
                 lastActiveTab = MenuConfig::WCS.MenuPage;
             }
+            ImGui::PopStyleColor();
+            bool configBtnHovered = ImGui::IsItemHovered();
+
+            // Icon state for Config button
+            iconStates[3].isHovered = configBtnHovered;
+            if (iconStates[3].isHovered) {
+                iconStates[3].hoverProgress += hoverSpeed;
+                if (iconStates[3].hoverProgress > 1.0f) iconStates[3].hoverProgress = 1.0f;
+            } else {
+                iconStates[3].hoverProgress -= hoverSpeed;
+                if (iconStates[3].hoverProgress < 0.0f) iconStates[3].hoverProgress = 0.0f;
+            }
+
+            // Selection animation
+            if (Button4Pressed) {
+                iconStates[3].selectProgress += selectSpeed;
+                if (iconStates[3].selectProgress > 1.0f) iconStates[3].selectProgress = 1.0f;
+            } else {
+                iconStates[3].selectProgress -= selectSpeed;
+                if (iconStates[3].selectProgress < 0.0f) iconStates[3].selectProgress = 0.0f;
+            }
+
+            // Calculate the total animation progress
+            float configAnimProgress = (iconStates[3].hoverProgress > iconStates[3].selectProgress) ?
+                iconStates[3].hoverProgress : iconStates[3].selectProgress;
+
+            // Draw the actual icon
+            ImVec2 configIconPos = ImVec2(
+                ImGui::GetItemRectMin().x + buttonSize/2,
+                ImGui::GetItemRectMin().y + buttonSize/2
+            );
+            // Render Config Icon (document)
+            {
+                const float size = buttonSize * 0.6f;
+                float width = size * 0.7f;
+                float height = size * 0.8f;
+                const ImColor iconColor = Button4Pressed ? 
+                    ImColor(1.00f, 0.40f, 0.00f, 1.00f) : // #FF6600 (active)
+                    ImColor(0.70f, 0.70f, 0.75f, 1.00f);
+                
+                ImVec2 topLeft = ImVec2(configIconPos.x - width/2, configIconPos.y - height/2);
+                ImVec2 bottomRight = ImVec2(configIconPos.x + width/2, configIconPos.y + height/2);
+                
+                // Calculate fold size (with animation)
+                float foldSize = width * 0.3f * (1.0f + configAnimProgress * 0.15f);
+                
+                // Draw main rectangle (document)
+                drawList->AddRectFilled(
+                    topLeft,
+                    bottomRight,
+                    iconColor,
+                    3.0f
+                );
+                
+                // Draw folded corner (with animation)
+                ImVec2 foldPoints[3] = {
+                    ImVec2(bottomRight.x - foldSize, topLeft.y),
+                    ImVec2(bottomRight.x, topLeft.y),
+                    ImVec2(bottomRight.x, topLeft.y + foldSize)
+                };
+                
+                drawList->AddTriangleFilled(
+                    foldPoints[0], 
+                    foldPoints[1], 
+                    foldPoints[2],
+                    ImGui::ColorConvertFloat4ToU32(ImVec4(0.12f, 0.12f, 0.14f, 1.0f))
+                );
+                
+                // Draw lines (text content) - animate width
+                float lineWidth = width * 0.7f * (1.0f + configAnimProgress * 0.15f);
+                float lineHeight = height * 0.1f;
+                float lineStartX = configIconPos.x - lineWidth/2;
+                
+                for (int i = 0; i < 3; i++) {
+                    float lineY = topLeft.y + height * 0.3f + (i * height * 0.2f);
+                    drawList->AddRectFilled(
+                        ImVec2(lineStartX, lineY),
+                        ImVec2(lineStartX + lineWidth, lineY + lineHeight),
+                        ImGui::ColorConvertFloat4ToU32(ImVec4(0.12f, 0.12f, 0.14f, 1.0f)),
+                        2.0f
+                    );
+                }
+            }
+
             ImGui::PopStyleColor();
             ImGui::PopStyleVar();
 
@@ -565,7 +1232,7 @@ namespace GUI
             drawList->AddRect(
                 contentAreaPos,
                 ImVec2(contentAreaPos.x + contentAreaSize.x, contentAreaPos.y + contentAreaSize.y),
-                ImGui::ColorConvertFloat4ToU32(ImVec4(0.10f, 0.12f, 0.28f, 0.30f)),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(1.00f, 0.40f, 0.00f, 0.30f)),
                 8.0f, 0, 1.0f
             );
 
@@ -986,9 +1653,9 @@ namespace GUI
             t = *v ? (T_Animation) : (1.0f - T_Animation);
         }
 
-        // Modern colors with midnight theme
+        // Modern colors with orange accent
         ImColor bgColor = ImColor(0.10f, 0.10f, 0.14f, 0.80f);
-        ImColor activeColor = ImColor(0.10f, 0.12f, 0.28f, t * 0.80f + 0.20f);
+        ImColor activeColor = ImColor(1.00f, 0.40f, 0.00f, t * 0.80f + 0.20f);
 
         // Draw shadow
         DrawList->AddRectFilled(
@@ -1031,7 +1698,7 @@ namespace GUI
         DrawList->AddCircleFilled(
             ImVec2(knobPosX, p.y + Radius),
             Radius - 1,
-            ImColor(1.0f, 1.0f, 1.0f, 1.0f),
+            ImColor(1.00f, 1.00f, 1.00f, 1.00f),
             12
         );
 
@@ -1040,7 +1707,7 @@ namespace GUI
             DrawList->AddCircle(
                 ImVec2(knobPosX, p.y + Radius),
                 Radius - 3,
-                ImGui::ColorConvertFloat4ToU32(ImVec4(0.14f, 0.16f, 0.36f, 0.5f)),
+                ImGui::ColorConvertFloat4ToU32(ImVec4(1.00f, 0.40f, 0.00f, 0.5f)),
                 12, 1.0f
             );
         }
