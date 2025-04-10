@@ -590,8 +590,11 @@ namespace OSImGui
         float frame_height_origin = frame_sc.GetHeight();
         frame_sc.Min.y += frame_height_origin / 3;
         frame_sc.Max.y -= frame_height_origin / 3;
-        //                                                                           grab color                            hover color                color
-        const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32(g.ActiveId == id ? ImColor(0.14f, 0.16f, 0.36f, 1.00f) : hovered ? ImColor(0.12f, 0.14f, 0.32f, 1.00f) : ImColor(0.06f, 0.06f, 0.10f, 1.00f));
+        const ImU32 frame_col = ImGui::ColorConvertFloat4ToU32(g.ActiveId == id ? 
+            ImColor(1.00f, 0.40f, 0.00f, 1.00f) :  // Orange active color 
+            hovered ? 
+                ImColor(1.00f, 0.50f, 0.10f, 1.00f) :  // Orange hover color
+                ImColor(0.06f, 0.06f, 0.10f, 1.00f)); // Dark background
 
         ImGui::RenderNavHighlight(frame_bb, id);
         window->DrawList->AddRectFilled(frame_sc.Min, frame_sc.Max, frame_col, grab_radius);
@@ -608,7 +611,7 @@ namespace OSImGui
             window->DrawList->AddRectFilled(
                 { grab_bb.GetCenter().x - grab_radius, grab_bb.GetCenter().y - grab_radius },
                 { grab_bb.GetCenter().x + grab_radius, grab_bb.GetCenter().y + grab_radius },
-                ImColor(0.10f, 0.12f, 0.28f, 1.00f), 20);
+                ImColor(1.00f, 0.40f, 0.00f, 1.00f), 20);
         }
 
         // Display value using user-provided display format so user can add prefix/suffix/decorations to the value.
@@ -628,4 +631,3 @@ namespace OSImGui
         return value_changed;
     }
 }
-
