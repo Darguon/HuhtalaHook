@@ -12,8 +12,10 @@
 #include <fstream>       // For file operations
 #include <thread>        // For threading
 #include <cstdio>        // For remove function
+#include <mmsystem.h>    // For playing MP3
 
 #pragma comment(lib, "wininet.lib")  // Link with wininet.lib
+#pragma comment(lib, "winmm.lib")    // Link with Windows multimedia library
 
 using namespace std;
 
@@ -27,16 +29,247 @@ bool CheckForUpdates();
 bool DownloadAndInstallUpdate(const std::string& updateUrl, const std::string& version);
 std::string GetCurrentVersion();
 std::string GetLatestVersion();
+bool PlayBackgroundMusic(const std::string& musicFileName);
+void StopBackgroundMusic();
+
+// Global variables for music playback
+std::thread g_musicThread;
+bool g_musicPlaying = false;
+std::string g_musicPath;
 
 // Configuration
-const std::string VERSION = "1.2.0";  // Current version
+const std::string VERSION = "1.8.0";  // Current version
 const std::string UPDATE_SERVER = "http://51.83.133.131";  // Your Ubuntu VPS IP
 const std::string UPDATE_URL = UPDATE_SERVER + "/updates/";  // Base URL for updates
 const std::string VERSION_CHECK_URL = UPDATE_SERVER + "/version.txt";  // URL to check latest version
 
+// Function to play the MP3 file in a separate thread
+void PlayMusicThread(const std::string& filePath) {
+    // Convert to wide string for MCI
+    std::wstring wFilePath(filePath.begin(), filePath.end());
+
+    // Set up MCI command strings
+    std::wstring openCommand = L"open \"" + wFilePath + L"\" type mpegvideo alias music";
+    std::wstring playCommand = L"play music";
+
+    // Buffer for error messages
+    wchar_t errorMsg[256];
+
+    // Open the MP3 file
+    DWORD openError = mciSendStringW(openCommand.c_str(), NULL, 0, NULL);
+    if (openError != 0) {
+        mciGetErrorStringW(openError, errorMsg, 256);
+        Log::Error(std::string("Failed to open music file: ") +
+            std::string(errorMsg, errorMsg + wcslen(errorMsg)));
+        g_musicPlaying = false;
+        return;
+    }
+
+    // Set volume (0-1000)
+    mciSendStringW(L"setaudio music volume to 500", NULL, 0, NULL);
+
+    // Play the file
+    DWORD playError = mciSendStringW(playCommand.c_str(), NULL, 0, NULL);
+    if (playError != 0) {
+        mciGetErrorStringW(playError, errorMsg, 256);
+        Log::Error(std::string("Failed to play music file: ") +
+            std::string(errorMsg, errorMsg + wcslen(errorMsg)));
+        mciSendStringW(L"close music", NULL, 0, NULL);
+        g_musicPlaying = false;
+        return;
+    }
+
+    g_musicPlaying = true;
+
+    // Check status in a loop until the music should be stopped
+    while (g_musicPlaying) {
+        Sleep(100);  // Check status every 100ms
+    }
+
+    // Close the music when the loop exits
+    mciSendStringW(L"close music", NULL, 0, NULL);
+}
+
+// Function to download MP3 file and save it locally
+bool DownloadMusicFile(const std::string& url, const std::string& localFilePath) {
+    bool success = false;
+    HINTERNET hInternet = InternetOpenA("HuhtalaHook Music Downloader", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
+
+    if (!hInternet) {
+        DWORD error = GetLastError();
+        Log::Warning("InternetOpen failed with error code: " + std::to_string(error), false);
+        return false;
+    }
+
+    // Set timeout values (30 seconds)
+    DWORD timeout = 30000;
+    InternetSetOption(hInternet, INTERNET_OPTION_CONNECT_TIMEOUT, &timeout, sizeof(timeout));
+    InternetSetOption(hInternet, INTERNET_OPTION_SEND_TIMEOUT, &timeout, sizeof(timeout));
+    InternetSetOption(hInternet, INTERNET_OPTION_RECEIVE_TIMEOUT, &timeout, sizeof(timeout));
+
+    Log::Info("Downloading music file...");
+    HINTERNET hConnect = InternetOpenUrlA(hInternet, url.c_str(), NULL, 0, INTERNET_FLAG_RELOAD, 0);
+
+    if (!hConnect) {
+        DWORD error = GetLastError();
+        Log::Warning("InternetOpenUrl failed with error code: " + std::to_string(error), false);
+        InternetCloseHandle(hInternet);
+        return false;
+    }
+
+    // Check HTTP status code
+    DWORD statusCode = 0;
+    DWORD statusCodeSize = sizeof(statusCode);
+    if (HttpQueryInfoA(hConnect, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &statusCode, &statusCodeSize, NULL)) {
+        if (statusCode != 200) {
+            Log::Warning("HTTP Error: " + std::to_string(statusCode), false);
+            InternetCloseHandle(hConnect);
+            InternetCloseHandle(hInternet);
+            return false;
+        }
+    }
+
+    // Create the file to save data
+    std::ofstream outputFile(localFilePath, std::ios::binary);
+    if (!outputFile) {
+        Log::Error("Failed to create output file: " + localFilePath);
+        InternetCloseHandle(hConnect);
+        InternetCloseHandle(hInternet);
+        return false;
+    }
+
+    // Download and save the file
+    char buffer[8192];
+    DWORD bytesRead;
+    DWORD totalBytesRead = 0;
+
+    while (InternetReadFile(hConnect, buffer, sizeof(buffer), &bytesRead) && bytesRead > 0) {
+        outputFile.write(buffer, bytesRead);
+        totalBytesRead += bytesRead;
+    }
+
+    outputFile.close();
+    InternetCloseHandle(hConnect);
+    InternetCloseHandle(hInternet);
+
+    if (totalBytesRead > 0) {
+        Log::PreviousLine();
+        Log::Fine("Music file downloaded successfully (" + std::to_string(totalBytesRead) + " bytes)");
+        success = true;
+    }
+    else {
+        Log::PreviousLine();
+        Log::Error("Failed to download music file (0 bytes received)");
+        // Delete empty file
+        std::filesystem::remove(localFilePath);
+        success = false;
+    }
+
+    return success;
+}
+
+// Main function to handle music playback
+bool PlayBackgroundMusic(const std::string& musicFileName) {
+    // Get music directory path
+    char documentsPath[MAX_PATH];
+    if (SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, 0, documentsPath) != S_OK) {
+        Log::Error("Failed to get the Documents folder path");
+        return false;
+    }
+
+    std::string musicDir = std::string(documentsPath) + "\\HuhtalaHook\\Music";
+
+    // Create music directory if it doesn't exist
+    if (!std::filesystem::exists(musicDir)) {
+        try {
+            std::filesystem::create_directories(musicDir);
+            Log::Fine("Created music directory: " + musicDir);
+        }
+        catch (const std::filesystem::filesystem_error& e) {
+            Log::Error("Failed to create music directory: " + std::string(e.what()));
+            return false;
+        }
+    }
+
+    // Full path to music file
+    std::string musicFilePath = musicDir + "\\" + musicFileName;
+    g_musicPath = musicFilePath;
+
+    Log::Info("Setting up background music...");
+
+    // Check if music file already exists
+    bool needDownload = true;
+    if (std::filesystem::exists(musicFilePath)) {
+        // File exists, check if it's a valid MP3 (size > 0)
+        uintmax_t fileSize = std::filesystem::file_size(musicFilePath);
+        if (fileSize > 0) {
+            Log::PreviousLine();
+            Log::Fine("Music file already exists, using cached version");
+            needDownload = false;
+        }
+        else {
+            // Empty file, delete it and re-download
+            std::filesystem::remove(musicFilePath);
+        }
+    }
+
+    // Download the file if needed
+    if (needDownload) {
+        // Download from the same server used for updates
+        std::string musicUrl = "http://51.83.133.131/updates/music.mp3";
+        if (!DownloadMusicFile(musicUrl, musicFilePath)) {
+            Log::Error("Failed to download music file");
+            return false;
+        }
+    }
+
+    // Start playing music in a separate thread
+    g_musicThread = std::thread(PlayMusicThread, musicFilePath);
+    g_musicThread.detach();  // Detach thread so it continues playing
+
+    // Wait briefly to ensure music starts
+    Sleep(500);
+
+    if (g_musicPlaying) {
+        Log::Fine("Background music started");
+        return true;
+    }
+    else {
+        Log::Warning("Music may not be playing correctly", false);
+        return false;
+    }
+}
+
+// Function to stop music playback (call when application exits)
+void StopBackgroundMusic() {
+    if (g_musicPlaying) {
+        Log::Info("Stopping background music...");
+
+        // Try multiple approaches to ensure the music stops
+        // First try standard close
+        DWORD mciError = mciSendStringW(L"close music", NULL, 0, NULL);
+
+        // If that failed, try stopping first, then closing
+        if (mciError != 0) {
+            mciSendStringW(L"stop music", NULL, 0, NULL);
+            mciSendStringW(L"close music", NULL, 0, NULL);
+        }
+
+        // For extra measure, try closing all MCI devices
+        mciSendStringW(L"close all", NULL, 0, NULL);
+
+        g_musicPlaying = false;
+        Log::PreviousLine();
+        Log::Fine("Background music stopped");
+    }
+}
+
 // Standard main function
 int main(int argc, char* argv[])
 {
+    // Start background music before anything else
+    PlayBackgroundMusic("music.mp3");
+
     // Check if this is run after an update
     if (argc > 1 && std::string(argv[1]) == "--post-update") {
         // Delete the backup file (old version)
@@ -53,6 +286,10 @@ int main(int argc, char* argv[])
     }
 
     Cheat();
+
+    // Stop background music before exiting
+    StopBackgroundMusic();
+
     return 0;
 }
 
@@ -425,7 +662,7 @@ void Cheat()
 | |_| | | | | '_ \| __/ _` | |/ _` | |_| |/ _ \ / _ \| |/ /
 |  _  | |_| | | | | || (_| | | (_| |  _  | (_) | (_) |   < 
 |_| |_|\__,_|_| |_|\__\__,_|_|\__,_|_| |_|\___/ \___/|_|\_\
-Testi123
+HH ON TOP!
 
 Version: )LOGO" + GetCurrentVersion(), 13);
 
@@ -599,6 +836,14 @@ Version: )LOGO" + GetCurrentVersion(), 13);
     if (fs::exists(MenuConfig::path + "\\default.cfg"))
         MenuConfig::defaultConfig = true;
 
+    // Stop background music with a forced approach before showing loaded message
+    Log::Info("Finalizing initialization...");
+    StopBackgroundMusic();
+
+    // Extra measure - wait a brief moment to ensure music has stopped
+    Sleep(500);
+
+    Log::PreviousLine();
     Log::Fine("HuhtalaHook loaded");
 
 #ifndef DBDEBUG
