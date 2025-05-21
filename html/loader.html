@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HuhtalaHook Loader</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#FF6B00',  // Orange
+                        secondary: '#FF8C00', // Lighter orange for gradients
+                        dark: '#121212',      // Very dark gray, almost black
+                        darker: '#0A0A0A',    // Even darker for backgrounds
+                        light: '#E0E0E0'      // Light gray for text
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slow': 'bounce 2s infinite',
+                        'spin-slow': 'spin 3s linear infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #FF6B00, #FF8C00, #FFA500);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            background-size: 200% auto;
+            animation: gradientBG 3s ease infinite;
+        }
+
+        .progress-animation {
+            background: linear-gradient(90deg, rgba(255,107,0,0), rgba(255,107,0,1), rgba(255,107,0,0));
+            background-size: 200% 100%;
+            animation: gradientBG 2s ease infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #FF6B00;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-darker text-light antialiased">
+    <div class="min-h-screen flex flex-col items-center justify-center p-4">
+        <!-- Logo Area -->
+        <div class="mb-8 text-center">
+            <h1 class="text-5xl font-bold mb-2">
+                <span class="gradient-text">HuhtalaHook</span>
+            </h1>
+            <p class="text-sm opacity-70">PREMIUM CS2 ENHANCEMENT SUITE</p>
+        </div>
+
+        <!-- Loading Animation -->
+        <div class="relative w-64 h-64 mb-8">
+            <div class="absolute inset-0 rounded-full border-4 border-gray-800"></div>
+            <div class="absolute inset-0 rounded-full border-t-4 border-primary animate-spin-slow"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <div class="text-4xl font-bold text-primary animate-pulse-slow">HH</div>
+            </div>
+        </div>
+
+        <!-- Status Area -->
+        <div class="w-full max-w-md mb-6">
+            <div class="flex justify-between mb-2">
+                <span id="statusText" class="text-sm font-medium">Initializing...</span>
+                <span id="statusPercent" class="text-sm font-medium text-primary">0%</span>
+            </div>
+            <div class="w-full bg-dark rounded-full h-2 overflow-hidden">
+                <div id="progressBar" class="h-full bg-primary progress-animation rounded-full" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Detailed Status Log -->
+        <div class="w-full max-w-md bg-dark p-4 rounded-lg max-h-32 overflow-y-auto">
+            <div id="logContainer" class="text-xs space-y-1 font-mono">
+                <div class="log-entry">
+                    <span class="text-gray-400">[</span>
+                    <span class="text-primary">INFO</span>
+                    <span class="text-gray-400">]</span>
+                    <span> Starting HuhtalaHook v1.8.0...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Version Info -->
+        <div class="mt-6 text-xs opacity-50">
+            <p>HuhtalaHook v1.8.0 • <span id="currentDate">2025-05-21</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Set the current date
+        document.getElementById('currentDate').innerText = new Date().toISOString().split('T')[0];
+
+        // Simulated loading stages for preview (will be replaced with actual data)
+        const loadingStages = [
+            { text: "Initializing...", percent: 5 },
+            { text: "Checking for updates...", percent: 15 },
+            { text: "Verifying license...", percent: 30 },
+            { text: "Connecting to kernel mode driver...", percent: 50 },
+            { text: "Waiting for CS2...", percent: 65 },
+            { text: "Linking to CS2...", percent: 80 },
+            { text: "Loading configuration...", percent: 90 },
+            { text: "Ready to launch", percent: 100 }
+        ];
+
+        // Log message types
+        const LOG_TYPES = {
+            INFO: "INFO",
+            FINE: "FINE",
+            ERROR: "ERROR",
+            WARNING: "WARNING"
+        };
+
+        // Function to add a log entry
+        function addLogEntry(type, message) {
+            const logContainer = document.getElementById('logContainer');
+            
+            // Create log entry element
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            
+            // Type color based on log type
+            let typeColor = 'text-primary';
+            if (type === LOG_TYPES.FINE) typeColor = 'text-green-500';
+            if (type === LOG_TYPES.ERROR) typeColor = 'text-red-500';
+            if (type === LOG_TYPES.WARNING) typeColor = 'text-yellow-500';
+            
+            logEntry.innerHTML = `
+                <span class="text-gray-400">[</span>
+                <span class="${typeColor}">${type}</span>
+                <span class="text-gray-400">]</span>
+                <span> ${message}</span>
+            `;
+            
+            // Add to log container and scroll to bottom
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // Function to update loading status
+        function updateStatus(text, percent) {
+            document.getElementById('statusText').innerText = text;
+            document.getElementById('statusPercent').innerText = `${percent}%`;
+            document.getElementById('progressBar').style.width = `${percent}%`;
+        }
+
+        // For demo purposes only - simulate loading
+        // This will be replaced with actual communication with the C++ application
+        let currentStage = 0;
+        
+        function simulateLoading() {
+            if (currentStage < loadingStages.length) {
+                const stage = loadingStages[currentStage];
+                updateStatus(stage.text, stage.percent);
+                addLogEntry(
+                    currentStage % 4 === 0 ? LOG_TYPES.INFO : 
+                    currentStage % 4 === 1 ? LOG_TYPES.FINE : 
+                    currentStage % 4 === 2 ? LOG_TYPES.WARNING : LOG_TYPES.ERROR, 
+                    stage.text
+                );
+                currentStage++;
+                setTimeout(simulateLoading, 1500);
+            }
+        }
+        
+        // Start the simulation
+        setTimeout(simulateLoading, 500);
+
+        // In the actual implementation, we'll use WebSockets or polling to get updates from the C++ app
+        async function connectToApplication() {
+            // This function would establish communication with the C++ application
+            // via WebSockets, Server-Sent Events, or regular polling
+        }
+
+        // Call the connection function
+        // connectToApplication();
+    </script>
+</body>
+</html>
